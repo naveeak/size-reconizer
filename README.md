@@ -4,19 +4,37 @@
 
 ## 🚀 Features
 
+### Core Features
 *   **Privacy-First**: All processing happens locally in your browser. No video or images are ever uploaded.
 *   **Team Batch Mode**: Measure multiple employees in one session with names attached.
-*   **Dual Calibration Modes**:
-    *   💳 **Card Mode**: Uses a standard credit card (ISO/IEC 7810) as a reference.
-    *   📏 **Height Mode**: Uses body height to estimate scale.
-*   **Real-Time Computer Vision**: Utilizes TensorFlow.js and OpenCV.js for instant feedback.
-*   **Pose Estimation**: Tracks 33 body keypoints using MediaPipe BlazePose to measure shoulder width.
+*   **Upper Body Detection**: Only requires upper body (head to hips) to be visible - no need to show full body.
+
+### Calibration Modes
+*   💳 **Card Mode**: Uses a standard credit card (ISO/IEC 7810) as a reference.
+*   📏 **Height Mode**: Uses body height to estimate scale via torso length.
+
+### AI & Computer Vision
+*   **Real-Time Pose Estimation**: Tracks 33 body keypoints using MediaPipe BlazePose.
+*   **Auto-Capture**: Automatically captures measurement when 30 samples are collected.
+*   **Real-Time Pose Guidance**: Visual feedback tells users to step closer/back for optimal positioning.
+*   **Progress Indicator**: Shows sample collection progress (0/30 samples).
+
+### Results & Data
 *   **3D Visualization**: See a rotating 3D model of the size in the results panel.
-*   **Manual Capture**: Click the shutter button to instantly capture measurements.
 *   **Editable Measurements**: Correct AI-detected values if needed.
 *   **Team Dashboard**: View all employee measurements in one place.
 *   **Excel Export**: Export the full team list with names, sizes, and measurements for manufacturers.
 *   **Session Management**: Clear all data to start a new measurement session.
+
+## 🎯 Pose Guidance System
+
+The app provides real-time visual feedback:
+- **"👤 No Person Detected"** - Stand in front of the camera
+- **"👤 Shoulders Not Visible"** - Step back until shoulders are visible
+- **"📍 Show Upper Body"** - Make sure head and hips are visible
+- **"⬅️ Step Back"** - You're too close to the camera
+- **"➡️ Step Closer"** - You're too far from the camera
+- **"✅ Perfect! Hold Still..."** - Good position, capturing samples
 
 ## 🛠️ Tech Stack
 
@@ -36,8 +54,8 @@
 1.  **Setup**: Open `index.html` in a modern web browser.
 2.  **Enter Employee Name**: Type the employee's name or ID.
 3.  **Calibrate**: Use Card or Height method.
-4.  **Pose**: Have the employee stand back with arms relaxed.
-5.  **Capture**: Click the red shutter button.
+4.  **Pose**: Have the employee show upper body (head to hips), arms relaxed.
+5.  **Auto-Capture**: Wait for progress bar to fill (30 samples) - or click the red button for manual capture.
 6.  **Review & Edit**: Verify measurements, edit if needed.
 7.  **Save**: Click "Save Result" to add to the team list.
 8.  **Repeat**: Measure the next employee.

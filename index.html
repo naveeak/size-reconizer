@@ -262,7 +262,7 @@
                         <div
                             class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             2</div>
-                        <p class="text-sm text-gray-500"><b>Pose:</b> Stand back, arms relaxed.</p>
+                        <p class="text-sm text-gray-500"><b>Pose:</b> Show upper body (head to hips), arms relaxed.</p>
                     </div>
                     <div class="flex gap-4 items-start">
                         <div
@@ -763,20 +763,24 @@
                     const pose = poses[0];
                     this.drawSkeleton(pose.keypoints);
 
-                    // If using Height Method, calculate scale from full body height
+                    // If using Height Method, calculate scale from UPPER BODY (nose to hip)
+                    // For T-shirt sizing, we only need upper body visible
                     if (this.useHeightMethod) {
                         const nose = pose.keypoints[0];
-                        const leftAnkle = pose.keypoints[27];
-                        const rightAnkle = pose.keypoints[28];
+                        const leftHip = pose.keypoints[23];
+                        const rightHip = pose.keypoints[24];
 
-                        if (nose.score > 0.5 && leftAnkle.score > 0.5 && rightAnkle.score > 0.5) {
-                            const ankleY = (leftAnkle.y + rightAnkle.y) / 2;
-                            const heightPx = ankleY - nose.y;
-                            const estimatedBodyPartCm = this.userHeightCm - 20;
-                            scalePxPerCm = heightPx / estimatedBodyPartCm;
+                        if (nose.score > 0.5 && leftHip.score > 0.5 && rightHip.score > 0.5) {
+                            const hipY = (leftHip.y + rightHip.y) / 2;
+                            const torsoHeightPx = hipY - nose.y;
+
+                            // Estimate torso length from total height
+                            // Torso (nose to hip) is approximately 45% of total height
+                            const estimatedTorsoCm = this.userHeightCm * 0.45;
+                            scalePxPerCm = torsoHeightPx / estimatedTorsoCm;
                         } else {
-                            if (guidanceText) guidanceText.innerText = "📍 Show Full Body";
-                            if (guidanceHint) guidanceHint.innerText = "Step back until head and feet are visible";
+                            if (guidanceText) guidanceText.innerText = "📍 Show Upper Body";
+                            if (guidanceHint) guidanceHint.innerText = "Make sure head and hips are visible";
                         }
                     }
 
