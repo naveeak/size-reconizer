@@ -237,45 +237,33 @@
                         class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                 </div>
 
-                <div class="mb-6">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Calibration Mode</h2>
-                    <div class="flex gap-3">
-                        <button id="btn-card-mode" onclick="app.setCalibrationMethod('card')"
-                            class="flex-1 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all shadow-md">💳
-                            Card (Auto)</button>
-                        <button id="btn-height-mode" onclick="app.setCalibrationMethod('height')"
-                            class="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all">📏
-                            Height</button>
-                    </div>
-                </div>
-
                 <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Guide</h2>
 
                 <div class="space-y-4">
                     <div class="flex gap-4 items-start">
                         <div
-                            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
+                            class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             1</div>
-                        <p class="text-sm text-gray-500"><b>Hold Card:</b> Hold a credit card horizontally (landscape)
-                            in your hand.</p>
+                        <p class="text-sm text-gray-500"><b>Hold Card:</b> Hold a debit/credit card horizontally in your
+                            hand.</p>
                     </div>
                     <div class="flex gap-4 items-start">
                         <div
-                            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
+                            class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             2</div>
                         <p class="text-sm text-gray-500"><b>Pose:</b> Show upper body (head to hips), arms relaxed.</p>
                     </div>
                     <div class="flex gap-4 items-start">
                         <div
-                            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
+                            class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             3</div>
-                        <p class="text-sm text-gray-500"><b>Wait:</b> Auto-captures when 30 samples collected.</p>
+                        <p class="text-sm text-gray-500"><b>Wait:</b> Auto-captures when calibrated and 30 samples
+                            collected.</p>
                     </div>
                 </div>
 
                 <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <p class="text-sm text-amber-800 font-medium">💳 Hold card FLAT facing camera for auto-calibration.
-                    </p>
+                    <p class="text-sm text-amber-800 font-medium">💳 Card is detected automatically for calibration.</p>
                 </div>
 
                 <div class="mt-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -641,40 +629,10 @@
                 if (progressBar) progressBar.style.width = '0%';
                 if (progressText) progressText.innerText = '0 / 30 samples';
 
-                if (this.useHeightMethod) {
-                    this.updateStatus(STATE.DETECTING_POSE);
-                } else {
-                    this.updateStatus(STATE.DETECTING_CARD);
-                }
-            }
-
-            setCalibrationMethod(method) {
-                this.useHeightMethod = method === 'height';
-                scalePxPerCm = 0; // Reset scale when switching modes
-
-                // Update button styles
-                const cardBtn = document.getElementById('btn-card-mode');
-                const heightBtn = document.getElementById('btn-height-mode');
-
-                if (this.useHeightMethod) {
-                    const h = prompt("Enter height in CM:", "175");
-                    if (h && !isNaN(h)) {
-                        this.userHeightCm = parseFloat(h);
-                        // Update button styles
-                        if (cardBtn) cardBtn.className = "flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all";
-                        if (heightBtn) heightBtn.className = "flex-1 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all shadow-md";
-                    } else {
-                        this.useHeightMethod = false;
-                    }
-                } else {
-                    // Card mode (default)
-                    if (cardBtn) cardBtn.className = "flex-1 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all shadow-md";
-                    if (heightBtn) heightBtn.className = "flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all";
-                }
-
-                // Stay in pose detection mode
                 this.updateStatus(STATE.DETECTING_POSE);
             }
+
+            // setCalibrationMethod removed - card calibration is automatic
 
             async loop() {
                 if (appState === STATE.ERROR) return;
@@ -684,7 +642,7 @@
                 // Unified detection: always run pose, detect card in hand if no scale yet
                 if (appState === STATE.DETECTING_POSE) {
                     // Try to detect card for calibration if we don't have scale
-                    if (scalePxPerCm === 0 && opencvLoaded && !this.useHeightMethod) {
+                    if (scalePxPerCm === 0 && opencvLoaded) {
                         try {
                             this.processCardDetection();
                         } catch (e) {
@@ -800,26 +758,7 @@
                     const pose = poses[0];
                     this.drawSkeleton(pose.keypoints);
 
-                    // If using Height Method, calculate scale from UPPER BODY (nose to hip)
-                    // For T-shirt sizing, we only need upper body visible
-                    if (this.useHeightMethod) {
-                        const nose = pose.keypoints[0];
-                        const leftHip = pose.keypoints[23];
-                        const rightHip = pose.keypoints[24];
-
-                        if (nose.score > 0.5 && leftHip.score > 0.5 && rightHip.score > 0.5) {
-                            const hipY = (leftHip.y + rightHip.y) / 2;
-                            const torsoHeightPx = hipY - nose.y;
-
-                            // Estimate torso length from total height
-                            // Torso (nose to hip) is approximately 45% of total height
-                            const estimatedTorsoCm = this.userHeightCm * 0.45;
-                            scalePxPerCm = torsoHeightPx / estimatedTorsoCm;
-                        } else {
-                            if (guidanceText) guidanceText.innerText = "📍 Show Upper Body";
-                            if (guidanceHint) guidanceHint.innerText = "Make sure head and hips are visible";
-                        }
-                    }
+                    // Card calibration is handled separately - no height method needed
 
                     // Check shoulder keypoints
                     const leftShoulder = pose.keypoints[11];
@@ -830,12 +769,9 @@
                     if (leftShoulder.score < 0.5 || rightShoulder.score < 0.5) {
                         if (guidanceText) guidanceText.innerText = "👤 Shoulders Not Visible";
                         if (guidanceHint) guidanceHint.innerText = "Step back until shoulders are in frame";
-                    } else if (scalePxPerCm === 0 && !this.useHeightMethod) {
-                        if (guidanceText) guidanceText.innerText = "� Show Credit Card";
+                    } else if (scalePxPerCm === 0) {
+                        if (guidanceText) guidanceText.innerText = "💳 Show Credit Card";
                         if (guidanceHint) guidanceHint.innerText = "Hold card horizontally (landscape) facing camera";
-                    } else if (scalePxPerCm === 0 && this.useHeightMethod) {
-                        if (guidanceText) guidanceText.innerText = "�📏 Waiting for Calibration";
-                        if (guidanceHint) guidanceHint.innerText = "Make sure head and hips are visible";
                     } else {
                         // Check if person is too close or too far
                         const shoulderWidthPx = Math.sqrt(
@@ -947,8 +883,8 @@
                 appState = STATE.SHOW_RESULTS; // Stop loop processing
 
                 // Init 3D scene after panel is visible (needs proper dimensions)
-                // Use requestAnimationFrame to ensure DOM is painted
-                requestAnimationFrame(() => {
+                // Use setTimeout to ensure DOM is fully painted
+                setTimeout(() => {
                     if (!threeRenderer) {
                         this.init3D();
                     }
@@ -957,7 +893,7 @@
                         const scaleFactor = chestCm / 100;
                         torsoMesh.scale.set(scaleFactor, 1, scaleFactor * 0.8);
                     }
-                });
+                }, 100);
 
                 // Capture image
                 const image = canvas.toDataURL('image/jpeg');
