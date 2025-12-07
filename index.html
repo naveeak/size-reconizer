@@ -788,17 +788,17 @@
 
                 data.reverse().forEach(item => {
                     const row = document.createElement('tr');
-                    row.className = 'border-b border-gray-700 hover:bg-gray-700/50';
+                    row.className = 'border-b border-gray-100 hover:bg-gray-50 transition-colors';
                     row.innerHTML = `
-                        <td class="p-4">${item.date}</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-blue-600 rounded text-xs font-bold">${item.size}</span></td>
-                        <td class="p-4">${item.chest}</td>
-                        <td class="p-4">${item.shoulder}</td>
-                        <td class="p-4">
-                            <img src="${item.image}" class="w-16 h-16 object-cover rounded border border-gray-600 cursor-pointer hover:scale-150 transition-transform" onclick="app.downloadImage('${item.image}')">
+                        <td class="p-5 font-medium text-gray-900">${item.date}</td>
+                        <td class="p-5"><span class="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold tracking-wide">${item.size}</span></td>
+                        <td class="p-5 text-gray-600">${item.chest}</td>
+                        <td class="p-5 text-gray-600">${item.shoulder}</td>
+                        <td class="p-5">
+                            <img src="${item.image}" class="w-16 h-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-110 transition-transform shadow-sm" onclick="app.downloadImage('${item.image}')">
                         </td>
-                        <td class="p-4">
-                            <button onclick="app.downloadImage('${item.image}')" class="text-blue-400 hover:text-blue-300 text-sm">Download Img</button>
+                        <td class="p-5">
+                            <button onclick="app.downloadImage('${item.image}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Download</button>
                         </td>
                     `;
                     tbody.appendChild(row);
