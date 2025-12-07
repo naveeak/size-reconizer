@@ -147,6 +147,8 @@
                             <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
                                 Shoulder</th>
                             <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
+                                Status</th>
+                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
                                 Capture</th>
                             <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
                                 Actions</th>
@@ -254,47 +256,60 @@
             </div>
 
             <!-- Results Panel (Hidden initially) -->
-            <div id="results-panel" class="hidden absolute inset-0 bg-white p-8 flex flex-col">
+            <div id="results-panel" class="hidden absolute inset-0 bg-white p-8 flex flex-col overflow-y-auto">
                 <div class="text-center mb-4">
                     <h2 class="text-2xl font-bold text-gray-900">Analysis Complete</h2>
-                    <p class="text-gray-500 text-sm">Here is your tailored size recommendation.</p>
+                    <p class="text-gray-500 text-sm">Review your measurements. Edit if needed.</p>
                 </div>
 
                 <div class="flex-1 flex flex-col items-center justify-center">
                     <!-- 3D Model Container -->
                     <div id="three-container"
-                        class="w-full h-48 bg-gray-50 rounded-xl mb-4 overflow-hidden border border-gray-100 relative">
+                        class="w-full h-40 bg-gray-50 rounded-xl mb-4 overflow-hidden border border-gray-100 relative">
                         <!-- Canvas will be injected here -->
                     </div>
 
-                    <div class="relative mb-6">
+                    <div class="relative mb-4">
                         <div class="absolute inset-0 bg-gray-900 rounded-full opacity-5 blur-xl"></div>
                         <div
-                            class="relative w-24 h-24 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
-                            <span id="result-size" class="text-4xl font-bold text-white">L</span>
+                            class="relative w-20 h-20 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
+                            <span id="result-size" class="text-3xl font-bold text-white">L</span>
                         </div>
                     </div>
 
-                    <div class="w-full space-y-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <!-- Editable Measurements -->
+                    <div class="w-full space-y-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-500 text-sm font-medium">Chest Circumference</span>
-                            <span id="result-chest" class="font-mono font-bold text-gray-900 text-lg">102 cm</span>
+                            <span class="text-gray-500 text-sm font-medium">Chest (cm)</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="input-chest"
+                                    class="w-20 text-right font-mono font-bold text-gray-900 text-lg bg-white border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                <button onclick="app.recalculateSize()"
+                                    class="text-blue-600 hover:text-blue-800 text-xs font-medium">Update</button>
+                            </div>
                         </div>
                         <div class="w-full h-px bg-gray-200"></div>
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-500 text-sm font-medium">Shoulder Width</span>
-                            <span id="result-shoulder" class="font-mono font-bold text-gray-900 text-lg">46 cm</span>
+                            <span class="text-gray-500 text-sm font-medium">Shoulder (cm)</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="input-shoulder"
+                                    class="w-20 text-right font-mono font-bold text-gray-900 text-lg bg-white border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Edit Notice -->
+                    <p id="edit-notice" class="hidden mt-3 text-xs text-amber-600 font-medium">⚠️ Measurements were
+                        manually edited</p>
                 </div>
 
-                <div class="mt-8 space-y-3">
+                <div class="mt-6 space-y-3">
                     <button onclick="app.saveCurrentResult()"
-                        class="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold tracking-wide transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                        class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold tracking-wide transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                         SAVE RESULT
                     </button>
                     <button onclick="app.reset()"
-                        class="w-full py-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 rounded-xl font-bold tracking-wide transition-colors">
+                        class="w-full py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 rounded-xl font-bold tracking-wide transition-colors">
                         MEASURE AGAIN
                     </button>
                 </div>
@@ -392,6 +407,9 @@
         let db = new Database();
         let currentResult = null; // Store temp result for saving
         let threeScene, threeCamera, threeRenderer, torsoMesh;
+        let originalChestCm = 0; // Track original AI-detected values
+        let originalShoulderCm = 0;
+        let wasEdited = false;
 
         // --- MAIN APP CLASS ---
         class App {
@@ -790,10 +808,16 @@
                 // Determine Size
                 const size = this.getSize(chestCm);
 
-                // Show Results
+                // Show Results - populate editable inputs
                 document.getElementById('result-size').innerText = size;
-                document.getElementById('result-chest').innerText = `${chestCm.toFixed(1)} cm`;
-                document.getElementById('result-shoulder').innerText = `${avgShoulderCm.toFixed(1)} cm`;
+                document.getElementById('input-chest').value = chestCm.toFixed(1);
+                document.getElementById('input-shoulder').value = avgShoulderCm.toFixed(1);
+
+                // Store original values for edit tracking
+                originalChestCm = chestCm;
+                originalShoulderCm = avgShoulderCm;
+                wasEdited = false;
+                document.getElementById('edit-notice').classList.add('hidden');
 
                 document.getElementById('instructions-panel').classList.add('hidden');
                 document.getElementById('results-panel').classList.remove('hidden');
@@ -817,8 +841,43 @@
                     size: size,
                     chest: chestCm.toFixed(1),
                     shoulder: avgShoulderCm.toFixed(1),
-                    image: image
+                    image: image,
+                    edited: false
                 };
+            }
+
+            recalculateSize() {
+                const newChestCm = parseFloat(document.getElementById('input-chest').value);
+                const newShoulderCm = parseFloat(document.getElementById('input-shoulder').value);
+
+                if (isNaN(newChestCm) || isNaN(newShoulderCm)) {
+                    alert("Please enter valid numbers.");
+                    return;
+                }
+
+                // Check if values were modified
+                if (Math.abs(newChestCm - originalChestCm) > 0.5 || Math.abs(newShoulderCm - originalShoulderCm) > 0.5) {
+                    wasEdited = true;
+                    document.getElementById('edit-notice').classList.remove('hidden');
+                }
+
+                // Recalculate size based on (potentially) edited chest
+                const newSize = this.getSize(newChestCm);
+                document.getElementById('result-size').innerText = newSize;
+
+                // Update 3D model
+                if (torsoMesh) {
+                    const scaleFactor = newChestCm / 100;
+                    torsoMesh.scale.set(scaleFactor, 1, scaleFactor * 0.8);
+                }
+
+                // Update currentResult
+                if (currentResult) {
+                    currentResult.chest = newChestCm.toFixed(1);
+                    currentResult.shoulder = newShoulderCm.toFixed(1);
+                    currentResult.size = newSize;
+                    currentResult.edited = wasEdited;
+                }
             }
 
             getSize(chestCm) {
@@ -866,11 +925,15 @@
                 data.reverse().forEach(item => {
                     const row = document.createElement('tr');
                     row.className = 'border-b border-gray-100 hover:bg-gray-50 transition-colors';
+                    const editedBadge = item.edited
+                        ? '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Edited</span>'
+                        : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">AI</span>';
                     row.innerHTML = `
                         <td class="p-5 font-medium text-gray-900">${item.date}</td>
                         <td class="p-5"><span class="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold tracking-wide">${item.size}</span></td>
-                        <td class="p-5 text-gray-600">${item.chest}</td>
-                        <td class="p-5 text-gray-600">${item.shoulder}</td>
+                        <td class="p-5 text-gray-600">${item.chest} cm</td>
+                        <td class="p-5 text-gray-600">${item.shoulder} cm</td>
+                        <td class="p-5">${editedBadge}</td>
                         <td class="p-5">
                             <img src="${item.image}" class="w-16 h-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-110 transition-transform shadow-sm" onclick="app.downloadImage('${item.image}')">
                         </td>
@@ -903,14 +966,15 @@
                     Date: item.date,
                     Size: item.size,
                     "Chest (cm)": item.chest,
-                    "Shoulder (cm)": item.shoulder
+                    "Shoulder (cm)": item.shoulder,
+                    "Status": item.edited ? "Manually Edited" : "AI Measured"
                 }));
 
                 const ws = XLSX.utils.json_to_sheet(sheetData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Measurements");
 
-                XLSX.writeFile(wb, "SizeAI_Measurements.xlsx");
+                XLSX.writeFile(wb, "TailoredAI_Measurements.xlsx");
             }
         }
 
