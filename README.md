@@ -1,21 +1,22 @@
-# TailoredAI - Client-Side T-Shirt Size Predictor 👕
+# TailoredAI - Team T-Shirt Size Measurement Tool 👕
 
-**TailoredAI** is a 100% client-side web application that uses computer vision and AI to predict T-shirt sizes in real-time. By using either a standard credit card or your height for calibration, it provides accurate size recommendations without sending any images to a server.
+**TailoredAI** is a 100% client-side web application designed for **companies and manufacturers** to measure T-shirt sizes for entire teams. Using AI-powered computer vision, it captures employee measurements and exports them to Excel for easy sharing with manufacturers.
 
 ## 🚀 Features
 
 *   **Privacy-First**: All processing happens locally in your browser. No video or images are ever uploaded.
+*   **Team Batch Mode**: Measure multiple employees in one session with names attached.
 *   **Dual Calibration Modes**:
     *   💳 **Card Mode**: Uses a standard credit card (ISO/IEC 7810) as a reference.
-    *   📏 **Height Mode**: Uses your body height to estimate scale.
+    *   📏 **Height Mode**: Uses body height to estimate scale.
 *   **Real-Time Computer Vision**: Utilizes TensorFlow.js and OpenCV.js for instant feedback.
 *   **Pose Estimation**: Tracks 33 body keypoints using MediaPipe BlazePose to measure shoulder width.
-*   **3D Visualization**: See a rotating 3D model of your size in the results panel.
-*   **Manual Capture**: Click the shutter button to instantly capture your measurement.
-*   **Dashboard & History**: Built-in dashboard to view past measurements and captured images.
-*   **Data Persistence**: Automatically saves results to your browser's local storage (IndexedDB).
-*   **Excel Export**: Export your measurement history to `.xlsx` format.
-*   **Responsive Design**: Works on desktop and mobile devices with a sleek, light-mode UI.
+*   **3D Visualization**: See a rotating 3D model of the size in the results panel.
+*   **Manual Capture**: Click the shutter button to instantly capture measurements.
+*   **Editable Measurements**: Correct AI-detected values if needed.
+*   **Team Dashboard**: View all employee measurements in one place.
+*   **Excel Export**: Export the full team list with names, sizes, and measurements for manufacturers.
+*   **Session Management**: Clear all data to start a new measurement session.
 
 ## 🛠️ Tech Stack
 
@@ -30,16 +31,25 @@
     *   [SheetJS](https://sheetjs.com/) - Excel export
     *   IndexedDB - Local data storage
 
-## 📋 Usage
+## 📋 Workflow for Manufacturers
 
-1.  **Open the App**: Simply open `index.html` in a modern web browser.
-2.  **Calibrate**:
-    *   **Card**: Hold a credit card against your chest.
-    *   **Height**: Enter your height and step back until your full body is visible.
-3.  **Pose**: Step back until your upper body is visible. The app will measure your shoulder width.
-4.  **Capture**: Click the red shutter button when ready.
-5.  **Get Results**: Receive your estimated chest circumference and recommended T-shirt size.
-6.  **Save & Track**: Save your results to the dashboard, view history, and export data.
+1.  **Setup**: Open `index.html` in a modern web browser.
+2.  **Enter Employee Name**: Type the employee's name or ID.
+3.  **Calibrate**: Use Card or Height method.
+4.  **Pose**: Have the employee stand back with arms relaxed.
+5.  **Capture**: Click the red shutter button.
+6.  **Review & Edit**: Verify measurements, edit if needed.
+7.  **Save**: Click "Save Result" to add to the team list.
+8.  **Repeat**: Measure the next employee.
+9.  **Export**: Click "Export Excel" to download the team measurements file.
+10. **Share**: Send the Excel file to your manufacturer.
+
+## 📊 Excel Export Format
+
+| Employee | Size | Chest (cm) | Shoulder (cm) | Status | Date |
+|----------|------|------------|---------------|--------|------|
+| John Doe | L    | 105.2      | 46.3          | AI Measured | 12/7/2024 |
+| Jane Smith | M  | 98.5       | 43.1          | Manually Edited | 12/7/2024 |
 
 ## 🔧 Installation
 

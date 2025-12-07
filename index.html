@@ -118,10 +118,14 @@
             class="hidden absolute inset-0 z-40 bg-white/95 backdrop-blur-sm flex flex-col p-8 overflow-hidden transition-all duration-300">
             <div class="flex justify-between items-center mb-8 max-w-6xl mx-auto w-full">
                 <div>
-                    <h2 class="text-3xl font-bold text-gray-900">Measurement History</h2>
-                    <p class="text-gray-500 mt-1">Track your size evolution over time.</p>
+                    <h2 class="text-3xl font-bold text-gray-900">Team Measurements</h2>
+                    <p class="text-gray-500 mt-1">Export this list and share with manufacturers.</p>
                 </div>
                 <div class="flex gap-3">
+                    <button onclick="app.clearAllData()"
+                        class="px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium transition-all">
+                        🗑️ Clear All
+                    </button>
                     <button onclick="app.exportToExcel()"
                         class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-2 transition-all">
                         📥 Export Excel
@@ -138,20 +142,20 @@
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
                         <tr>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">Date
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
+                                Employee</th>
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">Size
                             </th>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">Size
-                            </th>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
                                 Chest</th>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
                                 Shoulder</th>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
                                 Status</th>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
-                                Capture</th>
-                            <th class="p-5 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
-                                Actions</th>
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">Date
+                            </th>
+                            <th class="p-4 font-semibold text-sm uppercase tracking-wider border-b border-gray-200">
+                                Photo</th>
                         </tr>
                     </thead>
                     <tbody id="history-table-body" class="divide-y divide-gray-100 text-gray-700">
@@ -210,8 +214,15 @@
 
             <!-- Instructions Panel -->
             <div id="instructions-panel" class="p-8 flex-1 overflow-y-auto">
-                <div class="mb-8">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Calibration Mode</h2>
+                <!-- Employee Name Input -->
+                <div class="mb-6">
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Employee Details</h2>
+                    <input type="text" id="input-employee-name" placeholder="Enter Employee Name or ID"
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                </div>
+
+                <div class="mb-6">
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Calibration Mode</h2>
                     <div class="flex gap-3">
                         <button onclick="app.setCalibrationMethod('card')"
                             class="flex-1 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all shadow-md">💳
@@ -222,36 +233,31 @@
                     </div>
                 </div>
 
-                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Step-by-Step Guide</h2>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Guide</h2>
 
-                <div class="space-y-8">
-                    <div class="flex gap-5 items-start group">
+                <div class="space-y-4">
+                    <div class="flex gap-4 items-start">
                         <div
-                            class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 group-hover:bg-gray-900 group-hover:text-white transition-colors">
+                            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             1</div>
-                        <div>
-                            <h3 class="font-bold text-gray-900 mb-1">Calibrate</h3>
-                            <p class="text-sm text-gray-500 leading-relaxed">
-                                <b>Card:</b> Hold a standard card against your chest.<br>
-                                <b>Height:</b> Enter your height and stand back.
-                            </p>
-                        </div>
+                        <p class="text-sm text-gray-500"><b>Calibrate:</b> Use Card or Height method.</p>
                     </div>
-
-                    <div class="flex gap-5 items-start group">
+                    <div class="flex gap-4 items-start">
                         <div
-                            class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 group-hover:bg-gray-900 group-hover:text-white transition-colors">
+                            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             2</div>
-                        <div>
-                            <h3 class="font-bold text-gray-900 mb-1">Pose</h3>
-                            <p class="text-sm text-gray-500 leading-relaxed">Step back until your full upper body is
-                                visible. Stand straight with arms relaxed.</p>
-                        </div>
+                        <p class="text-sm text-gray-500"><b>Pose:</b> Stand back, arms relaxed.</p>
                     </div>
+                    <div class="flex gap-4 items-start">
+                        <div
+                            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shrink-0 text-sm">
+                            3</div>
+                        <p class="text-sm text-gray-500"><b>Capture:</b> Click the red button.</p>
+                    </div>
+                </div>
 
-                    <div class="mt-8 p-5 bg-blue-50 rounded-xl border border-blue-100">
-                        <p class="text-sm text-blue-800 font-medium">💡 Tip: Ensure good lighting for best results.</p>
-                    </div>
+                <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-sm text-blue-800 font-medium">💡 Enter employee name BEFORE measuring.</p>
                 </div>
             </div>
 
@@ -392,6 +398,17 @@
                     const request = store.getAll();
 
                     request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async clearAll() {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([STORE_NAME], "readwrite");
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.clear();
+
+                    request.onsuccess = () => resolve();
                     request.onerror = () => reject(request.error);
                 });
             }
@@ -835,8 +852,12 @@
                 // Capture image
                 const image = canvas.toDataURL('image/jpeg');
 
+                // Get employee name from input
+                const employeeName = document.getElementById('input-employee-name').value.trim() || 'Unknown';
+
                 // Store result temporarily
                 currentResult = {
+                    name: employeeName,
                     date: new Date().toLocaleString(),
                     size: size,
                     chest: chestCm.toFixed(1),
@@ -893,9 +914,20 @@
 
             async saveCurrentResult() {
                 if (currentResult) {
+                    if (!currentResult.name || currentResult.name === 'Unknown') {
+                        const name = prompt("Please enter employee name:");
+                        if (name && name.trim()) {
+                            currentResult.name = name.trim();
+                        } else {
+                            alert("Employee name is required!");
+                            return;
+                        }
+                    }
                     try {
                         await db.save(currentResult);
-                        alert("Result Saved to Dashboard!");
+                        alert(`Saved: ${currentResult.name} - Size ${currentResult.size}`);
+                        // Clear the name input for next employee
+                        document.getElementById('input-employee-name').value = '';
                     } catch (e) {
                         console.error(e);
                         alert("Failed to save result.");
@@ -929,16 +961,14 @@
                         ? '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Edited</span>'
                         : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">AI</span>';
                     row.innerHTML = `
-                        <td class="p-5 font-medium text-gray-900">${item.date}</td>
-                        <td class="p-5"><span class="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold tracking-wide">${item.size}</span></td>
-                        <td class="p-5 text-gray-600">${item.chest} cm</td>
-                        <td class="p-5 text-gray-600">${item.shoulder} cm</td>
-                        <td class="p-5">${editedBadge}</td>
-                        <td class="p-5">
-                            <img src="${item.image}" class="w-16 h-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-110 transition-transform shadow-sm" onclick="app.downloadImage('${item.image}')">
-                        </td>
-                        <td class="p-5">
-                            <button onclick="app.downloadImage('${item.image}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Download</button>
+                        <td class="p-4 font-bold text-gray-900">${item.name || 'Unknown'}</td>
+                        <td class="p-4"><span class="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold">${item.size}</span></td>
+                        <td class="p-4 text-gray-600">${item.chest} cm</td>
+                        <td class="p-4 text-gray-600">${item.shoulder} cm</td>
+                        <td class="p-4">${editedBadge}</td>
+                        <td class="p-4 text-gray-500 text-sm">${item.date}</td>
+                        <td class="p-4">
+                            <img src="${item.image}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-110 transition-transform" onclick="app.downloadImage('${item.image}')">
                         </td>
                     `;
                     tbody.appendChild(row);
@@ -961,20 +991,34 @@
                     return;
                 }
 
-                // Prepare data for sheet
+                // Prepare data for sheet - Employee Name first
                 const sheetData = data.map(item => ({
-                    Date: item.date,
-                    Size: item.size,
+                    "Employee": item.name || 'Unknown',
+                    "Size": item.size,
                     "Chest (cm)": item.chest,
                     "Shoulder (cm)": item.shoulder,
-                    "Status": item.edited ? "Manually Edited" : "AI Measured"
+                    "Status": item.edited ? "Manually Edited" : "AI Measured",
+                    "Date": item.date
                 }));
 
                 const ws = XLSX.utils.json_to_sheet(sheetData);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Measurements");
+                XLSX.utils.book_append_sheet(wb, ws, "Team Measurements");
 
-                XLSX.writeFile(wb, "TailoredAI_Measurements.xlsx");
+                XLSX.writeFile(wb, `TailoredAI_Team_${new Date().toISOString().split('T')[0]}.xlsx`);
+            }
+
+            async clearAllData() {
+                if (confirm("Are you sure you want to delete ALL measurement data? This cannot be undone.")) {
+                    try {
+                        await db.clearAll();
+                        await this.loadDashboardData();
+                        alert("All data cleared. Ready for a new session.");
+                    } catch (e) {
+                        console.error(e);
+                        alert("Failed to clear data.");
+                    }
+                }
             }
         }
 
