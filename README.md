@@ -1,6 +1,6 @@
-# SizeAI - Client-Side T-Shirt Size Predictor 👕
+# TailoredAI - Client-Side T-Shirt Size Predictor 👕
 
-**SizeAI** is a 100% client-side web application that uses computer vision to predict T-shirt sizes in real-time. By using either a standard credit card or your height for calibration, it provides accurate size recommendations without sending any images to a server.
+**TailoredAI** is a 100% client-side web application that uses computer vision and AI to predict T-shirt sizes in real-time. By using either a standard credit card or your height for calibration, it provides accurate size recommendations without sending any images to a server.
 
 ## 🚀 Features
 
@@ -10,22 +10,25 @@
     *   📏 **Height Mode**: Uses your body height to estimate scale.
 *   **Real-Time Computer Vision**: Utilizes TensorFlow.js and OpenCV.js for instant feedback.
 *   **Pose Estimation**: Tracks 33 body keypoints using MediaPipe BlazePose to measure shoulder width.
+*   **3D Visualization**: See a rotating 3D model of your size in the results panel.
+*   **Manual Capture**: Click the shutter button to instantly capture your measurement.
 *   **Dashboard & History**: Built-in dashboard to view past measurements and captured images.
 *   **Data Persistence**: Automatically saves results to your browser's local storage (IndexedDB).
 *   **Excel Export**: Export your measurement history to `.xlsx` format.
-*   **Responsive Design**: Works on desktop and mobile devices with a sleek, dark-mode UI.
+*   **Responsive Design**: Works on desktop and mobile devices with a sleek, light-mode UI.
 
 ## 🛠️ Tech Stack
 
-*   **Frontend**: HTML5, Vanilla JavaScript
-*   **Styling**: Tailwind CSS
+*   **Frontend**: HTML5, Vanilla JavaScript (Single-file app)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/) (CDN)
 *   **ML/CV Libraries**:
-    *   [TensorFlow.js](https://www.tensorflow.org/js)
-    *   [MediaPipe BlazePose](https://github.com/tensorflow/tfjs-models/tree/master/pose-detection)
-    *   [OpenCV.js](https://docs.opencv.org/4.x/d5/d10/tutorial_js_root.html)
+    *   [TensorFlow.js](https://www.tensorflow.org/js) - ML runtime
+    *   [MediaPipe BlazePose](https://github.com/tensorflow/tfjs-models/tree/master/pose-detection) - Pose estimation
+    *   [OpenCV.js](https://docs.opencv.org/4.x/d5/d10/tutorial_js_root.html) - Card detection
+*   **3D Graphics**: [Three.js](https://threejs.org/) - 3D visualization
 *   **Utilities**:
-    *   [SheetJS](https://sheetjs.com/) (for Excel export)
-    *   IndexedDB (for local storage)
+    *   [SheetJS](https://sheetjs.com/) - Excel export
+    *   IndexedDB - Local data storage
 
 ## 📋 Usage
 
@@ -34,8 +37,9 @@
     *   **Card**: Hold a credit card against your chest.
     *   **Height**: Enter your height and step back until your full body is visible.
 3.  **Pose**: Step back until your upper body is visible. The app will measure your shoulder width.
-4.  **Get Results**: Receive your estimated chest circumference and recommended T-shirt size.
-5.  **Save & Track**: Save your results to the dashboard, view history, and export data.
+4.  **Capture**: Click the red shutter button when ready.
+5.  **Get Results**: Receive your estimated chest circumference and recommended T-shirt size.
+6.  **Save & Track**: Save your results to the dashboard, view history, and export data.
 
 ## 🔧 Installation
 
@@ -43,7 +47,7 @@ No build process required! This is a standalone single-file application.
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/size-ai.git
+    git clone https://github.com/yourusername/tailored-ai.git
     ```
 2.  Open `index.html` in your browser.
 

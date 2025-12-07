@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI T-Shirt Size Predictor</title>
+    <title>TailoredAI - T-Shirt Size Predictor</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,6 +22,9 @@
     <!-- OpenCV.js -->
     <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"
         type="text/javascript"></script>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <style>
         /* Custom Animations */
@@ -182,6 +185,14 @@
                     </div>
                 </div>
 
+                <!-- Manual Capture Button -->
+                <div id="capture-container" class="absolute bottom-8 left-0 right-0 flex justify-center z-30 hidden">
+                    <button onclick="app.manualCapture()"
+                        class="w-16 h-16 rounded-full bg-white border-4 border-gray-300 shadow-lg flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group">
+                        <div class="w-12 h-12 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors"></div>
+                    </button>
+                </div>
+
                 <!-- Loading Spinner -->
                 <div id="loader" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
                     <div class="w-16 h-16 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-6">
@@ -244,24 +255,23 @@
 
             <!-- Results Panel (Hidden initially) -->
             <div id="results-panel" class="hidden absolute inset-0 bg-white p-8 flex flex-col">
-                <div class="text-center mb-8">
-                    <div
-                        class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
-                            </path>
-                        </svg>
-                    </div>
+                <div class="text-center mb-4">
                     <h2 class="text-2xl font-bold text-gray-900">Analysis Complete</h2>
                     <p class="text-gray-500 text-sm">Here is your tailored size recommendation.</p>
                 </div>
 
                 <div class="flex-1 flex flex-col items-center justify-center">
-                    <div class="relative mb-8">
+                    <!-- 3D Model Container -->
+                    <div id="three-container"
+                        class="w-full h-48 bg-gray-50 rounded-xl mb-4 overflow-hidden border border-gray-100 relative">
+                        <!-- Canvas will be injected here -->
+                    </div>
+
+                    <div class="relative mb-6">
                         <div class="absolute inset-0 bg-gray-900 rounded-full opacity-5 blur-xl"></div>
                         <div
-                            class="relative w-32 h-32 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
-                            <span id="result-size" class="text-5xl font-bold text-white">L</span>
+                            class="relative w-24 h-24 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
+                            <span id="result-size" class="text-4xl font-bold text-white">L</span>
                         </div>
                     </div>
 
@@ -381,6 +391,7 @@
         let opencvLoaded = false;
         let db = new Database();
         let currentResult = null; // Store temp result for saving
+        let threeScene, threeCamera, threeRenderer, torsoMesh;
 
         // --- MAIN APP CLASS ---
         class App {
@@ -408,7 +419,10 @@
                     // 3. Wait for OpenCV
                     await this.waitForOpenCV();
 
-                    // 4. Start Loop
+                    // 4. Init 3D Scene
+                    this.init3D();
+
+                    // 5. Start Loop
                     this.updateStatus(STATE.DETECTING_CARD);
                     document.getElementById('loader').classList.add('hidden');
                     this.loop();
@@ -468,35 +482,82 @@
                 });
             }
 
+            init3D() {
+                const container = document.getElementById('three-container');
+                // Wait for container to exist/be visible or just init
+                if (!container) return;
+
+                const width = container.clientWidth || 300;
+                const height = container.clientHeight || 200;
+
+                threeScene = new THREE.Scene();
+                threeScene.background = new THREE.Color(0xf9fafb); // Gray-50
+
+                threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+                threeCamera.position.z = 5;
+                threeCamera.position.y = 0.5;
+
+                threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+                threeRenderer.setSize(width, height);
+                container.appendChild(threeRenderer.domElement);
+
+                // Lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                threeScene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(2, 5, 5);
+                threeScene.add(dirLight);
+
+                // Placeholder Torso Geometry
+                const geometry = new THREE.CylinderGeometry(0.8, 0.6, 2, 32);
+                const material = new THREE.MeshPhongMaterial({ color: 0x111827 }); // Gray-900
+                torsoMesh = new THREE.Mesh(geometry, material);
+                threeScene.add(torsoMesh);
+
+                // Animation Loop for 3D
+                const animate3D = () => {
+                    requestAnimationFrame(animate3D);
+                    if (torsoMesh) {
+                        torsoMesh.rotation.y += 0.01;
+                    }
+                    threeRenderer.render(threeScene, threeCamera);
+                };
+                animate3D();
+            }
+
             updateStatus(state, message) {
                 appState = state;
                 const statusText = document.getElementById('status-text');
                 const indicator = document.getElementById('status-indicator');
                 const cardGuide = document.getElementById('card-guide');
                 const poseGuide = document.getElementById('pose-guide');
+                const captureBtn = document.getElementById('capture-container');
 
                 // Reset guides
                 cardGuide.classList.add('hidden');
                 poseGuide.classList.add('hidden');
+                if (captureBtn) captureBtn.classList.add('hidden');
 
                 switch (state) {
                     case STATE.INIT:
                         statusText.innerText = "Initializing System...";
-                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium";
+                        indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide border border-blue-100";
                         break;
                     case STATE.DETECTING_CARD:
                         statusText.innerText = "Hold Credit Card on Chest";
-                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium";
+                        indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide border border-blue-100";
                         cardGuide.classList.remove('hidden');
                         break;
                     case STATE.DETECTING_POSE:
                         statusText.innerText = "Stand Back & Pose";
-                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm font-medium";
+                        indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold uppercase tracking-wide border border-purple-100";
                         poseGuide.classList.remove('hidden');
+                        if (captureBtn) captureBtn.classList.remove('hidden'); // Show capture button
                         break;
                     case STATE.SHOW_RESULTS:
                         statusText.innerText = "Analysis Complete";
-                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-medium";
+                        indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 text-green-700 text-xs font-semibold uppercase tracking-wide border border-green-100";
                         break;
                 }
 
@@ -691,10 +752,19 @@
                         ctx.fillText(`${shoulderCm.toFixed(1)} cm`, (leftShoulder.x + rightShoulder.x) / 2, (leftShoulder.y + rightShoulder.y) / 2 - 20);
 
                         // If we have enough samples, finish
-                        if (measurements.length > 30) {
-                            this.finishMeasurement();
-                        }
+                        // REMOVED AUTO FINISH for Manual Capture
+                        // if (measurements.length > 30) {
+                        //    this.finishMeasurement();
+                        // }
                     }
+                }
+            }
+
+            manualCapture() {
+                if (measurements.length > 0) {
+                    this.finishMeasurement();
+                } else {
+                    alert("No pose detected yet! Please stand back.");
                 }
             }
 
@@ -730,6 +800,13 @@
 
                 this.updateStatus(STATE.SHOW_RESULTS);
                 appState = STATE.SHOW_RESULTS; // Stop loop processing
+
+                // Update 3D Model Scale
+                if (torsoMesh) {
+                    // Base scale 1.0 = ~100cm chest
+                    const scaleFactor = chestCm / 100;
+                    torsoMesh.scale.set(scaleFactor, 1, scaleFactor * 0.8);
+                }
 
                 // Capture image
                 const image = canvas.toDataURL('image/jpeg');
