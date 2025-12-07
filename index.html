@@ -111,6 +111,15 @@
 
             <!-- Instructions Panel -->
             <div id="instructions-panel" class="p-6 flex-1 overflow-y-auto">
+                <h2 class="text-lg font-bold mb-4 text-blue-400">Calibration Method</h2>
+
+                <div class="flex gap-2 mb-6">
+                    <button onclick="app.setCalibrationMethod('card')"
+                        class="flex-1 py-2 bg-blue-600 rounded text-sm font-medium hover:bg-blue-500">💳 Card</button>
+                    <button onclick="app.setCalibrationMethod('height')"
+                        class="flex-1 py-2 bg-gray-700 rounded text-sm font-medium hover:bg-gray-600">📏 Height</button>
+                </div>
+
                 <h2 class="text-lg font-bold mb-4 text-blue-400">Instructions</h2>
 
                 <div class="space-y-6">
@@ -120,8 +129,10 @@
                             1</div>
                         <div>
                             <h3 class="font-medium mb-1">Calibration</h3>
-                            <p class="text-sm text-gray-400">Hold a standard credit card against your chest. Ensure it's
-                                clearly visible.</p>
+                            <p class="text-sm text-gray-400">
+                                <b>Card:</b> Hold a credit card on your chest.<br>
+                                <b>Height:</b> Enter your height and stand back.
+                            </p>
                         </div>
                     </div>
 
@@ -338,7 +349,28 @@
                 scalePxPerCm = 0;
                 document.getElementById('results-panel').classList.add('hidden');
                 document.getElementById('instructions-panel').classList.remove('hidden');
-                this.updateStatus(STATE.DETECTING_CARD);
+
+                if (this.useHeightMethod) {
+                    this.updateStatus(STATE.DETECTING_POSE);
+                } else {
+                    this.updateStatus(STATE.DETECTING_CARD);
+                }
+            }
+
+            setCalibrationMethod(method) {
+                this.useHeightMethod = method === 'height';
+
+                if (this.useHeightMethod) {
+                    const h = prompt("Enter your height in CM:", "175");
+                    if (h && !isNaN(h)) {
+                        this.userHeightCm = parseFloat(h);
+                        this.updateStatus(STATE.DETECTING_POSE);
+                    } else {
+                        this.useHeightMethod = false;
+                    }
+                } else {
+                    this.updateStatus(STATE.DETECTING_CARD);
+                }
             }
 
             async loop() {
@@ -444,11 +476,36 @@
                     const pose = poses[0];
                     this.drawSkeleton(pose.keypoints);
 
+                    // If using Height Method, calculate scale from full body height
+                    if (this.useHeightMethod) {
+                        // We need full body: Nose (0) to Ankles (27, 28)
+                        const nose = pose.keypoints[0];
+                        const leftAnkle = pose.keypoints[27];
+                        const rightAnkle = pose.keypoints[28];
+
+                        // Check visibility
+                        if (nose.score > 0.5 && leftAnkle.score > 0.5 && rightAnkle.score > 0.5) {
+                            const ankleY = (leftAnkle.y + rightAnkle.y) / 2;
+                            const heightPx = ankleY - nose.y; // Approx height in pixels
+
+                            // Estimate body part length (Nose to Ankle is approx Height - 20cm)
+                            const estimatedBodyPartCm = this.userHeightCm - 20;
+                            scalePxPerCm = heightPx / estimatedBodyPartCm;
+
+                            ctx.fillStyle = '#ffff00';
+                            ctx.fillText(`Height Calib: ${scalePxPerCm.toFixed(2)} px/cm`, 20, 50);
+                        } else {
+                            ctx.fillStyle = '#ff0000';
+                            ctx.fillText(`Show Full Body (Head to Feet)`, 20, 50);
+                            // Don't return, let it try to measure shoulder if scale is set
+                        }
+                    }
+
                     // Check confidence
                     const leftShoulder = pose.keypoints[11];
                     const rightShoulder = pose.keypoints[12];
 
-                    if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold) {
+                    if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold && scalePxPerCm > 0) {
                         // Calculate Shoulder Width
                         const dx = leftShoulder.x - rightShoulder.x;
                         const dy = leftShoulder.y - rightShoulder.y;
