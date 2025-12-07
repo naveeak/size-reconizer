@@ -352,9 +352,9 @@
             cardWidthMm: 85.6,
             cardHeightMm: 53.98,
             cardAspectRatio: 85.6 / 53.98, // ~1.585
-            aspectRatioTolerance: 0.15,
+            aspectRatioTolerance: 0.3, // Increased for real-world card angles
             minCardArea: 1500, // Reduced to detect card from further away
-            confidenceThreshold: 0.7,
+            confidenceThreshold: 0.6, // Lowered for better detection
             smoothingWindow: 10
         };
 
@@ -513,15 +513,18 @@
 
             async loadModels() {
                 await tf.ready();
+                // Use BlazePose HEAVY model for maximum accuracy
+                // Heavy model is larger but provides best pose detection
                 detector = await poseDetection.createDetector(
                     poseDetection.SupportedModels.BlazePose,
                     {
                         runtime: 'tfjs',
-                        modelType: 'full',
-                        enableSmoothing: true
+                        modelType: 'heavy',  // UPGRADED: lite < full < heavy
+                        enableSmoothing: true,
+                        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose'
                     }
                 );
-                console.log("BlazePose loaded");
+                console.log("BlazePose Heavy model loaded");
             }
 
             async waitForOpenCV() {
@@ -700,23 +703,36 @@
                 // We must ensure video dimensions match what OpenCV expects.
                 if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
-                // OpenCV Card Detection Logic
+                // OpenCV Card Detection Logic - IMPROVED
                 let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
                 let cap = new cv.VideoCapture(video);
                 cap.read(src);
 
-                // 2. Preprocessing
+                // 2. IMPROVED Preprocessing with Adaptive Thresholding
                 let gray = new cv.Mat();
                 cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-                let blur = new cv.Mat();
-                cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
-                let edges = new cv.Mat();
-                cv.Canny(blur, edges, 75, 200);
 
-                // 3. Find Contours
+                // Use bilateral filter to reduce noise while preserving edges
+                let blur = new cv.Mat();
+                cv.bilateralFilter(gray, blur, 9, 75, 75);
+
+                // Adaptive thresholding for better edge detection in various lighting
+                let thresh = new cv.Mat();
+                cv.adaptiveThreshold(blur, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
+
+                // Apply Canny on thresholded image
+                let edges = new cv.Mat();
+                cv.Canny(thresh, edges, 30, 100);
+
+                // Dilate to connect broken edges
+                let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+                let dilated = new cv.Mat();
+                cv.dilate(edges, dilated, kernel);
+
+                // 3. Find Contours on DILATED edges
                 let contours = new cv.MatVector();
                 let hierarchy = new cv.Mat();
-                cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                cv.findContours(dilated, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
                 let bestRect = null;
                 let maxArea = 0;
@@ -765,8 +781,9 @@
                     // No state transition needed - we're already in pose mode
                 }
 
-                // Cleanup
-                src.delete(); gray.delete(); blur.delete(); edges.delete();
+                // Cleanup - delete all OpenCV matrices
+                src.delete(); gray.delete(); blur.delete(); thresh.delete();
+                edges.delete(); kernel.delete(); dilated.delete();
                 contours.delete(); hierarchy.delete();
             }
 
@@ -905,8 +922,9 @@
                 // Average measurements
                 const avgShoulderCm = measurements.reduce((a, b) => a + b, 0) / measurements.length;
 
-                // Calculate Chest (Empirical: Shoulder * PI * 0.85)
-                const chestCm = avgShoulderCm * Math.PI * 0.85;
+                // Calculate Chest - RESEARCH-BASED formula
+                // Industry average: Chest circumference ≈ Shoulder width × 2.35
+                const chestCm = avgShoulderCm * 2.35;
 
                 // Determine Size
                 const size = this.getSize(chestCm);
@@ -994,13 +1012,13 @@
             }
 
             getSize(chestCm) {
-                // Simple mapping
-                if (chestCm < 86) return 'XS';
-                if (chestCm < 94) return 'S';
-                if (chestCm < 102) return 'M';
-                if (chestCm < 110) return 'L';
-                if (chestCm < 118) return 'XL';
-                if (chestCm < 126) return 'XXL';
+                // UPDATED size chart based on industry standards
+                if (chestCm < 88) return 'XS';
+                if (chestCm < 96) return 'S';
+                if (chestCm < 104) return 'M';
+                if (chestCm < 112) return 'L';
+                if (chestCm < 120) return 'XL';
+                if (chestCm < 128) return 'XXL';
                 return '3XL';
             }
 
