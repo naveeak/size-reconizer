@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI T-Shirt Size Predictor</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    
+    <!-- MediaPipe BlazePose -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+    
+    <!-- OpenCV.js -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+
+    <style>
+        /* Custom Animations */
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            animation: scan 2s linear infinite;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white h-screen overflow-hidden flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="h-16 flex items-center justify-between px-6 bg-gray-800 border-b border-gray-700 z-10">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">👕</span>
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">SizeAI</h1>
+        </div>
+        <div id="status-indicator" class="flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium">
+            <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+            <span id="status-text">Initializing...</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 relative flex flex-col md:flex-row">
+        
+        <!-- Video Feed Area -->
+        <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+            <!-- Video Element (Hidden, used for processing) -->
+            <video id="webcam" class="absolute inset-0 w-full h-full object-cover opacity-0" playsinline></video>
+            
+            <!-- Canvas Overlay (Visible) -->
+            <canvas id="output-canvas" class="absolute inset-0 w-full h-full object-contain"></canvas>
+            
+            <!-- UI Overlays -->
+            <div id="guide-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <!-- Card Guide -->
+                <div id="card-guide" class="hidden border-4 border-dashed border-yellow-400 rounded-lg w-64 h-40 opacity-50 flex items-center justify-center relative">
+                    <p class="text-yellow-400 font-bold bg-black/50 px-2 rounded">Place Card Here</p>
+                </div>
+                
+                <!-- Pose Guide -->
+                <div id="pose-guide" class="hidden absolute inset-0 flex items-center justify-center">
+                    <div class="border-2 border-cyan-500/30 w-1/3 h-3/4 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loader" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-50">
+                <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-gray-400 animate-pulse">Loading AI Models...</p>
+            </div>
+        </div>
+
+        <!-- Sidebar / Results Panel -->
+        <div class="md:w-80 bg-gray-800 border-l border-gray-700 flex flex-col z-20 transition-transform duration-300 transform translate-y-full md:translate-y-0 absolute md:relative bottom-0 w-full h-1/2 md:h-full">
+            
+            <!-- Instructions Panel -->
+            <div id="instructions-panel" class="p-6 flex-1 overflow-y-auto">
+                <h2 class="text-lg font-bold mb-4 text-blue-400">Instructions</h2>
+                
+                <div class="space-y-6">
+                    <div class="flex gap-4 items-start">
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold shrink-0">1</div>
+                        <div>
+                            <h3 class="font-medium mb-1">Calibration</h3>
+                            <p class="text-sm text-gray-400">Hold a standard credit card against your chest. Ensure it's clearly visible.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 items-start">
+                        <div class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold shrink-0">2</div>
+                        <div>
+                            <h3 class="font-medium mb-1">Pose</h3>
+                            <p class="text-sm text-gray-400">Step back until your upper body is visible. Stand straight with arms relaxed.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <p class="text-xs text-blue-300">💡 Tip: Good lighting is key for accurate results.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel (Hidden initially) -->
+            <div id="results-panel" class="hidden absolute inset-0 bg-gray-800 p-6 flex flex-col">
+                <h2 class="text-lg font-bold mb-6 text-green-400">Measurement Complete!</h2>
+                
+                <div class="flex-1 flex flex-col items-center justify-center text-center">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-green-500/20">
+                        <span id="result-size" class="text-4xl font-bold text-white">L</span>
+                    </div>
+                    <p class="text-gray-400 mb-8">Recommended Size</p>
+                    
+                    <div class="w-full space-y-3 bg-gray-700/50 p-4 rounded-xl">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Chest</span>
+                            <span id="result-chest" class="font-mono font-bold">102 cm</span>
+                        </div>
+                        <div class="w-full h-px bg-gray-600"></div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Shoulder</span>
+                            <span id="result-shoulder" class="font-mono font-bold">46 cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 space-y-3">
+                    <button onclick="app.reset()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors">
+                        Measure Again
+                    </button>
+                    <button class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20">
+                        Save Results
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- APP STATE & CONFIG ---
+        const CONFIG = {
+            cardWidthMm: 85.6,
+            cardHeightMm: 53.98,
+            cardAspectRatio: 85.6 / 53.98, // ~1.585
+            aspectRatioTolerance: 0.15,
+            minCardArea: 5000,
+            confidenceThreshold: 0.7,
+            smoothingWindow: 10
+        };
+
+        const STATE = {
+            INIT: 'initializing',
+            WAITING_PERMISSIONS: 'waiting_permissions',
+            DETECTING_CARD: 'detecting_card',
+            DETECTING_POSE: 'detecting_pose',
+            CALCULATING: 'calculating',
+            SHOW_RESULTS: 'results',
+            ERROR: 'error'
+        };
+
+        // --- GLOBAL VARIABLES ---
+        let appState = STATE.INIT;
+        let video, canvas, ctx;
+        let detector;
+        let scalePxPerCm = 0;
+        let measurements = [];
+        let opencvLoaded = false;
+
+        // --- MAIN APP CLASS ---
+        class App {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                this.updateStatus(STATE.INIT);
+                
+                video = document.getElementById('webcam');
+                canvas = document.getElementById('output-canvas');
+                ctx = canvas.getContext('2d');
+
+                try {
+                    // 1. Setup Camera
+                    await this.setupCamera();
+                    
+                    // 2. Load Models
+                    await this.loadModels();
+                    
+                    // 3. Wait for OpenCV
+                    await this.waitForOpenCV();
+
+                    // 4. Start Loop
+                    this.updateStatus(STATE.DETECTING_CARD);
+                    document.getElementById('loader').classList.add('hidden');
+                    this.loop();
+
+                } catch (error) {
+                    console.error("Initialization failed:", error);
+                    this.showError(error.message);
+                }
+            }
+
+            async setupCamera() {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    }
+                });
+                video.srcObject = stream;
+                
+                return new Promise((resolve) => {
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        resolve();
+                    };
+                });
+            }
+
+            async loadModels() {
+                await tf.ready();
+                detector = await poseDetection.createDetector(
+                    poseDetection.SupportedModels.BlazePose,
+                    {
+                        runtime: 'tfjs',
+                        modelType: 'full',
+                        enableSmoothing: true
+                    }
+                );
+                console.log("BlazePose loaded");
+            }
+
+            async waitForOpenCV() {
+                return new Promise((resolve) => {
+                    const check = setInterval(() => {
+                        if (typeof cv !== 'undefined' && cv.Mat) {
+                            clearInterval(check);
+                            opencvLoaded = true;
+                            console.log("OpenCV loaded");
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
+
+            updateStatus(state, message) {
+                appState = state;
+                const statusText = document.getElementById('status-text');
+                const indicator = document.getElementById('status-indicator');
+                const cardGuide = document.getElementById('card-guide');
+                const poseGuide = document.getElementById('pose-guide');
+
+                // Reset guides
+                cardGuide.classList.add('hidden');
+                poseGuide.classList.add('hidden');
+
+                switch(state) {
+                    case STATE.INIT:
+                        statusText.innerText = "Initializing System...";
+                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium";
+                        break;
+                    case STATE.DETECTING_CARD:
+                        statusText.innerText = "Hold Credit Card on Chest";
+                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium";
+                        cardGuide.classList.remove('hidden');
+                        break;
+                    case STATE.DETECTING_POSE:
+                        statusText.innerText = "Stand Back & Pose";
+                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm font-medium";
+                        poseGuide.classList.remove('hidden');
+                        break;
+                    case STATE.SHOW_RESULTS:
+                        statusText.innerText = "Analysis Complete";
+                        indicator.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-medium";
+                        break;
+                }
+                
+                if (message) statusText.innerText = message;
+            }
+
+            showError(msg) {
+                alert("Error: " + msg);
+            }
+
+            reset() {
+                measurements = [];
+                scalePxPerCm = 0;
+                document.getElementById('results-panel').classList.add('hidden');
+                document.getElementById('instructions-panel').classList.remove('hidden');
+                this.updateStatus(STATE.DETECTING_CARD);
+            }
+
+            async loop() {
+                if (appState === STATE.ERROR) return;
+
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                if (appState === STATE.DETECTING_CARD && opencvLoaded) {
+                    this.processCardDetection();
+                } else if (appState === STATE.DETECTING_POSE) {
+                    await this.processPoseDetection();
+                }
+
+                requestAnimationFrame(() => this.loop());
+            }
+
+            processCardDetection() {
+                // OpenCV Card Detection Logic
+                // 1. Read frame
+                let src = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
+                let cap = new cv.VideoCapture(video);
+                cap.read(src);
+
+                // 2. Preprocessing
+                let gray = new cv.Mat();
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                let blur = new cv.Mat();
+                cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
+                let edges = new cv.Mat();
+                cv.Canny(blur, edges, 75, 200);
+
+                // 3. Find Contours
+                let contours = new cv.MatVector();
+                let hierarchy = new cv.Mat();
+                cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                let bestRect = null;
+                let maxArea = 0;
+
+                for (let i = 0; i < contours.size(); ++i) {
+                    let cnt = contours.get(i);
+                    let area = cv.contourArea(cnt);
+                    
+                    if (area > CONFIG.minCardArea) {
+                        let peri = cv.arcLength(cnt, true);
+                        let approx = new cv.Mat();
+                        cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+
+                        if (approx.rows === 4) {
+                            let rect = cv.boundingRect(approx);
+                            let aspectRatio = rect.width / rect.height;
+                            
+                            // Check for vertical card (portrait) or horizontal
+                            // We expect user to hold it potentially either way, but prompt said "Vertical"
+                            // If vertical: width < height, ratio < 1. 
+                            // Prompt: "Validate card is held vertically (portrait orientation)"
+                            // Card ratio is ~1.58. Vertical ratio should be ~0.63 or ~1.58 if we consider long edge.
+                            // Let's stick to the prompt's "1.586 ratio" but "held vertically".
+                            // If held vertically, width is 53.98mm, height is 85.6mm. Ratio w/h = 0.63.
+                            // If the prompt says "Detect rectangular contours matching credit card aspect ratio (85.6mm × 53.98mm = 1.586 ratio)"
+                            // AND "Validate card is held vertically", then we look for w/h ~ 0.63.
+                            
+                            let targetRatio = 53.98 / 85.6; // ~0.63
+                            if (Math.abs(aspectRatio - targetRatio) < CONFIG.aspectRatioTolerance) {
+                                if (area > maxArea) {
+                                    maxArea = area;
+                                    bestRect = rect;
+                                }
+                            }
+                        }
+                        approx.delete();
+                    }
+                }
+
+                if (bestRect) {
+                    // Draw bounding box
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(bestRect.x, bestRect.y, bestRect.width, bestRect.height);
+                    
+                    // Lock in if stable (simplified for now: immediate lock)
+                    // In production, we'd want a stability counter
+                    
+                    // Calculate Scale: Card Height is 85.6mm (since vertical)
+                    // scale = mm / pixels
+                    // actually we need cm per pixel. 8.56 cm
+                    let cardHeightCm = 8.56; 
+                    scalePxPerCm = bestRect.height / cardHeightCm; // pixels per cm
+                    
+                    // Visual feedback
+                    ctx.fillStyle = '#00ff00';
+                    ctx.font = '20px Arial';
+                    ctx.fillText(`Card Detected! Scale: ${scalePxPerCm.toFixed(2)} px/cm`, bestRect.x, bestRect.y - 10);
+
+                    // Transition
+                    setTimeout(() => {
+                        this.updateStatus(STATE.DETECTING_POSE);
+                    }, 1000);
+                }
+
+                // Cleanup
+                src.delete(); gray.delete(); blur.delete(); edges.delete();
+                contours.delete(); hierarchy.delete();
+            }
+
+            async processPoseDetection() {
+                const poses = await detector.estimatePoses(video);
+                
+                if (poses.length > 0) {
+                    const pose = poses[0];
+                    this.drawSkeleton(pose.keypoints);
+
+                    // Check confidence
+                    const leftShoulder = pose.keypoints[11];
+                    const rightShoulder = pose.keypoints[12];
+                    
+                    if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold) {
+                        // Calculate Shoulder Width
+                        const dx = leftShoulder.x - rightShoulder.x;
+                        const dy = leftShoulder.y - rightShoulder.y;
+                        const distPx = Math.sqrt(dx*dx + dy*dy);
+                        
+                        const shoulderCm = distPx / scalePxPerCm;
+                        
+                        // Accumulate measurements
+                        measurements.push(shoulderCm);
+                        
+                        // Visual feedback
+                        ctx.beginPath();
+                        ctx.moveTo(leftShoulder.x, leftShoulder.y);
+                        ctx.lineTo(rightShoulder.x, rightShoulder.y);
+                        ctx.strokeStyle = '#00ffff';
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                        
+                        ctx.fillStyle = '#00ffff';
+                        ctx.fillText(`${shoulderCm.toFixed(1)} cm`, (leftShoulder.x + rightShoulder.x)/2, (leftShoulder.y + rightShoulder.y)/2 - 20);
+
+                        // If we have enough samples, finish
+                        if (measurements.length > 30) {
+                            this.finishMeasurement();
+                        }
+                    }
+                }
+            }
+
+            drawSkeleton(keypoints) {
+                // Simple skeleton drawing
+                keypoints.forEach(kp => {
+                    if (kp.score > 0.5) {
+                        ctx.beginPath();
+                        ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+                        ctx.fillStyle = kp.score > 0.8 ? '#00ff00' : '#ffff00';
+                        ctx.fill();
+                    }
+                });
+            }
+
+            finishMeasurement() {
+                // Average measurements
+                const avgShoulderCm = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+                
+                // Calculate Chest (Empirical: Shoulder * PI * 0.85)
+                const chestCm = avgShoulderCm * Math.PI * 0.85;
+
+                // Determine Size
+                const size = this.getSize(chestCm);
+
+                // Show Results
+                document.getElementById('result-size').innerText = size;
+                document.getElementById('result-chest').innerText = `${chestCm.toFixed(1)} cm`;
+                document.getElementById('result-shoulder').innerText = `${avgShoulderCm.toFixed(1)} cm`;
+                
+                document.getElementById('instructions-panel').classList.add('hidden');
+                document.getElementById('results-panel').classList.remove('hidden');
+                
+                this.updateStatus(STATE.SHOW_RESULTS);
+                appState = STATE.SHOW_RESULTS; // Stop loop processing
+            }
+
+            getSize(chestCm) {
+                // Simple mapping
+                if (chestCm < 86) return 'XS';
+                if (chestCm < 94) return 'S';
+                if (chestCm < 102) return 'M';
+                if (chestCm < 110) return 'L';
+                if (chestCm < 118) return 'XL';
+                if (chestCm < 126) return 'XXL';
+                return '3XL';
+            }
+        }
+
+        // --- INIT ---
+        function onOpenCvReady() {
+            // OpenCV ready callback
+        }
+
+        window.onload = () => {
+            window.app = new App();
+        };
+
+    </script>
+</body>
+</html>
