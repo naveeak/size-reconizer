@@ -199,6 +199,22 @@
                     </button>
                 </div>
 
+                <!-- Pose Guidance Overlay -->
+                <div id="pose-guidance" class="hidden absolute top-4 left-4 right-4 z-20">
+                    <!-- Guidance Text -->
+                    <div class="bg-black/70 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <p id="guidance-text" class="text-white font-bold text-lg">Stand in frame</p>
+                        <p id="guidance-hint" class="text-white/70 text-sm mt-1">Position yourself so shoulders are
+                            visible</p>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="mt-3 bg-white/20 rounded-full h-2 overflow-hidden">
+                        <div id="capture-progress" class="h-full bg-green-500 transition-all duration-200"
+                            style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-white/80 text-xs text-center mt-1">0 / 30 samples</p>
+                </div>
+
                 <!-- Loading Spinner -->
                 <div id="loader" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
                     <div class="w-16 h-16 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-6">
@@ -454,10 +470,7 @@
                     // 3. Wait for OpenCV
                     await this.waitForOpenCV();
 
-                    // 4. Init 3D Scene
-                    this.init3D();
-
-                    // 5. Start Loop
+                    // 4. Start Loop (3D init moved to finishMeasurement)
                     this.updateStatus(STATE.DETECTING_CARD);
                     document.getElementById('loader').classList.add('hidden');
                     this.loop();
@@ -568,11 +581,13 @@
                 const cardGuide = document.getElementById('card-guide');
                 const poseGuide = document.getElementById('pose-guide');
                 const captureBtn = document.getElementById('capture-container');
+                const poseGuidance = document.getElementById('pose-guidance');
 
                 // Reset guides
                 cardGuide.classList.add('hidden');
                 poseGuide.classList.add('hidden');
                 if (captureBtn) captureBtn.classList.add('hidden');
+                if (poseGuidance) poseGuidance.classList.add('hidden');
 
                 switch (state) {
                     case STATE.INIT:
@@ -588,7 +603,8 @@
                         statusText.innerText = "Stand Back & Pose";
                         indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold uppercase tracking-wide border border-purple-100";
                         poseGuide.classList.remove('hidden');
-                        if (captureBtn) captureBtn.classList.remove('hidden'); // Show capture button
+                        if (captureBtn) captureBtn.classList.remove('hidden');
+                        if (poseGuidance) poseGuidance.classList.remove('hidden');
                         break;
                     case STATE.SHOW_RESULTS:
                         statusText.innerText = "Analysis Complete";
@@ -608,6 +624,12 @@
                 scalePxPerCm = 0;
                 document.getElementById('results-panel').classList.add('hidden');
                 document.getElementById('instructions-panel').classList.remove('hidden');
+
+                // Reset progress bar
+                const progressBar = document.getElementById('capture-progress');
+                const progressText = document.getElementById('progress-text');
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressText) progressText.innerText = '0 / 30 samples';
 
                 if (this.useHeightMethod) {
                     this.updateStatus(STATE.DETECTING_POSE);
@@ -731,51 +753,80 @@
             async processPoseDetection() {
                 const poses = await detector.estimatePoses(video);
 
+                // Get guidance elements
+                const guidanceText = document.getElementById('guidance-text');
+                const guidanceHint = document.getElementById('guidance-hint');
+                const progressBar = document.getElementById('capture-progress');
+                const progressText = document.getElementById('progress-text');
+
                 if (poses.length > 0) {
                     const pose = poses[0];
                     this.drawSkeleton(pose.keypoints);
 
                     // If using Height Method, calculate scale from full body height
                     if (this.useHeightMethod) {
-                        // We need full body: Nose (0) to Ankles (27, 28)
                         const nose = pose.keypoints[0];
                         const leftAnkle = pose.keypoints[27];
                         const rightAnkle = pose.keypoints[28];
 
-                        // Check visibility
                         if (nose.score > 0.5 && leftAnkle.score > 0.5 && rightAnkle.score > 0.5) {
                             const ankleY = (leftAnkle.y + rightAnkle.y) / 2;
-                            const heightPx = ankleY - nose.y; // Approx height in pixels
-
-                            // Estimate body part length (Nose to Ankle is approx Height - 20cm)
+                            const heightPx = ankleY - nose.y;
                             const estimatedBodyPartCm = this.userHeightCm - 20;
                             scalePxPerCm = heightPx / estimatedBodyPartCm;
-
-                            ctx.fillStyle = '#ffff00';
-                            ctx.fillText(`Height Calib: ${scalePxPerCm.toFixed(2)} px/cm`, 20, 50);
                         } else {
-                            ctx.fillStyle = '#ff0000';
-                            ctx.fillText(`Show Full Body (Head to Feet)`, 20, 50);
-                            // Don't return, let it try to measure shoulder if scale is set
+                            if (guidanceText) guidanceText.innerText = "📍 Show Full Body";
+                            if (guidanceHint) guidanceHint.innerText = "Step back until head and feet are visible";
                         }
                     }
 
-                    // Check confidence
+                    // Check shoulder keypoints
                     const leftShoulder = pose.keypoints[11];
                     const rightShoulder = pose.keypoints[12];
+                    const nose = pose.keypoints[0];
 
+                    // Provide positioning guidance
+                    if (leftShoulder.score < 0.5 || rightShoulder.score < 0.5) {
+                        if (guidanceText) guidanceText.innerText = "👤 Shoulders Not Visible";
+                        if (guidanceHint) guidanceHint.innerText = "Step back until shoulders are in frame";
+                    } else if (scalePxPerCm === 0) {
+                        if (guidanceText) guidanceText.innerText = "📏 Waiting for Calibration";
+                        if (guidanceHint) guidanceHint.innerText = "Hold still while calibrating...";
+                    } else {
+                        // Check if person is too close or too far
+                        const shoulderWidthPx = Math.sqrt(
+                            Math.pow(leftShoulder.x - rightShoulder.x, 2) +
+                            Math.pow(leftShoulder.y - rightShoulder.y, 2)
+                        );
+                        const frameWidth = canvas.width;
+                        const shoulderRatio = shoulderWidthPx / frameWidth;
+
+                        if (shoulderRatio > 0.6) {
+                            if (guidanceText) guidanceText.innerText = "⬅️ Step Back";
+                            if (guidanceHint) guidanceHint.innerText = "You're too close to the camera";
+                        } else if (shoulderRatio < 0.15) {
+                            if (guidanceText) guidanceText.innerText = "➡️ Step Closer";
+                            if (guidanceHint) guidanceHint.innerText = "You're too far from the camera";
+                        } else {
+                            // Good position - measuring
+                            if (guidanceText) guidanceText.innerText = "✅ Perfect! Hold Still...";
+                            if (guidanceHint) guidanceHint.innerText = "Capturing measurement samples";
+                        }
+                    }
+
+                    // Measure if conditions are met
                     if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold && scalePxPerCm > 0) {
-                        // Calculate Shoulder Width
                         const dx = leftShoulder.x - rightShoulder.x;
                         const dy = leftShoulder.y - rightShoulder.y;
                         const distPx = Math.sqrt(dx * dx + dy * dy);
-
                         const shoulderCm = distPx / scalePxPerCm;
 
-                        // Accumulate measurements
-                        measurements.push(shoulderCm);
+                        // Only add reasonable measurements (30-60cm shoulder width)
+                        if (shoulderCm > 30 && shoulderCm < 60) {
+                            measurements.push(shoulderCm);
+                        }
 
-                        // Visual feedback
+                        // Visual feedback - draw shoulder line
                         ctx.beginPath();
                         ctx.moveTo(leftShoulder.x, leftShoulder.y);
                         ctx.lineTo(rightShoulder.x, rightShoulder.y);
@@ -786,12 +837,20 @@
                         ctx.fillStyle = '#00ffff';
                         ctx.fillText(`${shoulderCm.toFixed(1)} cm`, (leftShoulder.x + rightShoulder.x) / 2, (leftShoulder.y + rightShoulder.y) / 2 - 20);
 
-                        // If we have enough samples, finish
-                        // REMOVED AUTO FINISH for Manual Capture
-                        // if (measurements.length > 30) {
-                        //    this.finishMeasurement();
-                        // }
+                        // Update progress bar
+                        const progress = Math.min(100, (measurements.length / 30) * 100);
+                        if (progressBar) progressBar.style.width = `${progress}%`;
+                        if (progressText) progressText.innerText = `${measurements.length} / 30 samples`;
+
+                        // AUTO CAPTURE when we have enough samples
+                        if (measurements.length >= 30) {
+                            this.finishMeasurement();
+                        }
                     }
+                } else {
+                    // No pose detected
+                    if (guidanceText) guidanceText.innerText = "👤 No Person Detected";
+                    if (guidanceHint) guidanceHint.innerText = "Stand in front of the camera";
                 }
             }
 
@@ -842,12 +901,18 @@
                 this.updateStatus(STATE.SHOW_RESULTS);
                 appState = STATE.SHOW_RESULTS; // Stop loop processing
 
-                // Update 3D Model Scale
-                if (torsoMesh) {
-                    // Base scale 1.0 = ~100cm chest
-                    const scaleFactor = chestCm / 100;
-                    torsoMesh.scale.set(scaleFactor, 1, scaleFactor * 0.8);
-                }
+                // Init 3D scene after panel is visible (needs proper dimensions)
+                // Use requestAnimationFrame to ensure DOM is painted
+                requestAnimationFrame(() => {
+                    if (!threeRenderer) {
+                        this.init3D();
+                    }
+                    // Update 3D Model Scale
+                    if (torsoMesh) {
+                        const scaleFactor = chestCm / 100;
+                        torsoMesh.scale.set(scaleFactor, 1, scaleFactor * 0.8);
+                    }
+                });
 
                 // Capture image
                 const image = canvas.toDataURL('image/jpeg');
