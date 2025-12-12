@@ -1186,6 +1186,23 @@
                 }
             }
 
+            updateCalibration(factor) {
+                document.getElementById('calib-value').innerText = factor + 'x';
+                const f = parseFloat(factor);
+
+                // Recalculate from Original
+                if (window.originalChestCm) {
+                    const newChest = originalChestCm * f;
+                    const newShoulder = originalShoulderCm * f;
+
+                    document.getElementById('input-chest').value = newChest.toFixed(1);
+                    document.getElementById('input-shoulder').value = newShoulder.toFixed(1);
+
+                    // Trigger size update
+                    this.recalculateSize();
+                }
+            }
+
             manualSizeUpdate() {
                 const sizeSelect = document.getElementById('result-size-select');
                 const newSize = sizeSelect.value;
@@ -1340,9 +1357,12 @@
             // OpenCV ready callback
         }
 
-        window.onload = () => {
+        // Initialize immediately when DOM is ready to prevent "app undefined" errors if network stalls
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => { window.app = new App(); });
+        } else {
             window.app = new App();
-        };
+        }
 
     </script>
 </body>
