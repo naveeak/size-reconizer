@@ -908,7 +908,7 @@
                     // Measure if conditions are met
                     // CHECK ROTATION: Ensure shoulders are roughly parallel to camera (z-depth difference low)
                     const zDiff = Math.abs(leftShoulder.z - rightShoulder.z);
-                    const isRotated = zDiff > 0.2; // Relaxed threshold (was 0.1)
+                    const isRotated = zDiff > 0.4; // Relaxed threshold further (was 0.2) to prevent blocking
 
                     // ALWAYS DRAW VISUAL FEEDBACK regardless of capture status
                     // This ensures user knows they are detected
@@ -923,8 +923,8 @@
                         ctx.moveTo(leftShoulder.x, leftShoulder.y);
                         ctx.lineTo(rightShoulder.x, rightShoulder.y);
                         ctx.lineWidth = 4;
-                        // Color code: Cyan if valid, Orange if rotated/invalid
-                        if (!isRotated && shoulderCm > 15 && shoulderCm < 80) {
+                        // Color code: Cyan if valid, Orange if rotated (but now we allow capture anyway)
+                        if (!isRotated) {
                             ctx.strokeStyle = '#00ffff';
                         } else {
                             ctx.strokeStyle = '#ffa500'; // Orange warning
@@ -934,63 +934,66 @@
                         ctx.fillStyle = ctx.strokeStyle;
                         ctx.fillText(`${shoulderCm.toFixed(1)} cm`, (leftShoulder.x + rightShoulder.x) / 2, (leftShoulder.y + rightShoulder.y) / 2 - 20);
 
-                        // Capture logic checks
-                        if (!isRotated) {
-                            // Capture Hips
-                            const leftHip = pose.keypoints[23];
-                            const rightHip = pose.keypoints[24];
-                            let hipCm = 0;
+                        // Capture logic checks - NOW NON-BLOCKING FOR ROTATION
+                        // We capture anyway, but warn if rotated
 
-                            if (leftHip.score > CONFIG.confidenceThreshold && rightHip.score > CONFIG.confidenceThreshold) {
-                                const hipDx = leftHip.x - rightHip.x;
-                                const hipDy = leftHip.y - rightHip.y;
-                                const hipDistPx = Math.sqrt(hipDx * hipDx + hipDy * hipDy);
-                                hipCm = hipDistPx / scalePxPerCm;
+                        // Capture Hips
+                        const leftHip = pose.keypoints[23];
+                        const rightHip = pose.keypoints[24];
+                        let hipCm = 0;
 
-                                // Draw Hip Line
-                                ctx.beginPath();
-                                ctx.moveTo(leftHip.x, leftHip.y);
-                                ctx.lineTo(rightHip.x, rightHip.y);
-                                ctx.strokeStyle = '#ff00ff';
-                                ctx.lineWidth = 4;
-                                ctx.stroke();
+                        if (leftHip && leftHip.score > CONFIG.confidenceThreshold && rightHip && rightHip.score > CONFIG.confidenceThreshold) {
+                            const hipDx = leftHip.x - rightHip.x;
+                            const hipDy = leftHip.y - rightHip.y;
+                            const hipDistPx = Math.sqrt(hipDx * hipDx + hipDy * hipDy);
+                            hipCm = hipDistPx / scalePxPerCm;
+
+                            // Draw Hip Line
+                            ctx.beginPath();
+                            ctx.moveTo(leftHip.x, leftHip.y);
+                            ctx.lineTo(rightHip.x, rightHip.y);
+                            ctx.strokeStyle = '#ff00ff';
+                            ctx.lineWidth = 4;
+                            ctx.stroke();
+                        }
+
+                        // Capture Torso Length
+                        let torsoCm = 0;
+                        if (hipCm > 0) {
+                            const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2;
+                            const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+                            const midHipX = (leftHip.x + rightHip.x) / 2;
+                            const midHipY = (leftHip.y + rightHip.y) / 2;
+                            const torsoPx = Math.sqrt(Math.pow(midShoulderX - midHipX, 2) + Math.pow(midShoulderY - midHipY, 2));
+                            torsoCm = torsoPx / scalePxPerCm;
+                        }
+
+                        // Only add reasonable measurements (Relaxed range: 15-80cm)
+                        if (shoulderCm > 15 && shoulderCm < 80) {
+                            // Push object with all metrics
+                            measurements.push({
+                                shoulder: shoulderCm,
+                                hip: hipCm,
+                                torso: torsoCm
+                            });
+
+                            // Update progress bar
+                            const progress = Math.min(100, (measurements.length / 30) * 100);
+                            if (progressBar) progressBar.style.width = `${progress}%`;
+                            if (progressText) progressText.innerText = `${measurements.length} / 30 samples`;
+
+                            // AUTO CAPTURE when we have enough samples
+                            if (measurements.length >= 30) {
+                                this.finishMeasurement();
                             }
+                        }
 
-                            // Capture Torso Length
-                            let torsoCm = 0;
-                            if (hipCm > 0) {
-                                const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2;
-                                const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-                                const midHipX = (leftHip.x + rightHip.x) / 2;
-                                const midHipY = (leftHip.y + rightHip.y) / 2;
-                                const torsoPx = Math.sqrt(Math.pow(midShoulderX - midHipX, 2) + Math.pow(midShoulderY - midHipY, 2));
-                                torsoCm = torsoPx / scalePxPerCm;
-                            }
-
-                            // Only add reasonable measurements (Relaxed range: 15-80cm)
-                            if (shoulderCm > 15 && shoulderCm < 80) {
-                                // Push object with all metrics
-                                measurements.push({
-                                    shoulder: shoulderCm,
-                                    hip: hipCm,
-                                    torso: torsoCm
-                                });
-
-                                // Update progress bar
-                                const progress = Math.min(100, (measurements.length / 30) * 100);
-                                if (progressBar) progressBar.style.width = `${progress}%`;
-                                if (progressText) progressText.innerText = `${measurements.length} / 30 samples`;
-
-                                // AUTO CAPTURE when we have enough samples
-                                if (measurements.length >= 30) {
-                                    this.finishMeasurement();
-                                }
-                            }
-                        } else {
-                            // Rotation warning
-                            if (guidanceText) guidanceText.innerText = "🔄 Face Forward";
-                            if (guidanceHint) guidanceHint.innerText = "Your body is turned - face camera directly";
-                            this.updateBodyOutlineColor('rgba(255,180,50,0.7)', 'bg-orange-500/80 text-white', '🔄 STRAIGHTEN UP');
+                        // Just show warning if rotated, but don't stop capture
+                        if (isRotated) {
+                            if (guidanceText) guidanceText.innerText = "⚠️ Slight Turn Detected";
+                            if (guidanceHint) guidanceHint.innerText = "We are capturing, but please face forward for best accuracy";
+                            // Keep outline visible but orange
+                            this.updateBodyOutlineColor('rgba(255,180,50,0.7)', 'bg-orange-500/80 text-white', '⚠️ TURN DETECTED (Capturing...)');
                         }
                     }
                 } else {
