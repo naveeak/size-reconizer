@@ -84,6 +84,72 @@
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
+
+        /* Instruction Banner Modal */
+        .instruction-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+        }
+
+        .instruction-modal.hidden {
+            display: none;
+        }
+
+        .instruction-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 500px;
+            margin: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .do-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .do-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+
+        .do-icon.green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .do-icon.red {
+            background: #fee2e2;
+            color: #dc2626;
+        }
     </style>
 </head>
 
@@ -109,6 +175,78 @@
             </div>
         </div>
     </header>
+
+    <!-- Instruction Banner Modal -->
+    <div id="instruction-modal" class="instruction-modal">
+        <div class="instruction-card">
+            <div class="text-center mb-6">
+                <span class="text-4xl">📏</span>
+                <h2 class="text-2xl font-bold text-gray-900 mt-3">Before You Start</h2>
+                <p class="text-gray-500 mt-1">Follow these instructions for accurate measurements</p>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <p class="text-blue-800 font-bold text-center text-lg">📍 Stand 2 meters (~6.5 feet) from camera</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <!-- DO's -->
+                <div>
+                    <h3 class="font-bold text-green-700 mb-2 flex items-center gap-2">
+                        <span class="text-lg">✅</span> DO's
+                    </h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="do-item">
+                            <span class="do-icon green">✓</span>
+                            <span>Show upper body (head to hips)</span>
+                        </div>
+                        <div class="do-item">
+                            <span class="do-icon green">✓</span>
+                            <span>Keep arms relaxed at sides</span>
+                        </div>
+                        <div class="do-item">
+                            <span class="do-icon green">✓</span>
+                            <span>Face the camera directly</span>
+                        </div>
+                        <div class="do-item">
+                            <span class="do-icon green">✓</span>
+                            <span>Wear fitted clothing</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DON'Ts -->
+                <div>
+                    <h3 class="font-bold text-red-700 mb-2 flex items-center gap-2">
+                        <span class="text-lg">❌</span> DON'Ts
+                    </h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="do-item">
+                            <span class="do-icon red">✗</span>
+                            <span>Stand too close or far</span>
+                        </div>
+                        <div class="do-item">
+                            <span class="do-icon red">✗</span>
+                            <span>Wear loose/bulky clothes</span>
+                        </div>
+                        <div class="do-item">
+                            <span class="do-icon red">✗</span>
+                            <span>Move while measuring</span>
+                        </div>
+                        <div class="do-item">
+                            <span class="do-icon red">✗</span>
+                            <span>Tilt your body</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.dismissInstructions()"
+                class="w-full mt-6 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold tracking-wide transition-all shadow-lg hover:shadow-xl">
+                Got it! Let's Start
+            </button>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="flex-1 relative flex flex-col md:flex-row overflow-hidden">
@@ -176,13 +314,6 @@
 
                 <!-- UI Overlays -->
                 <div id="guide-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <!-- Card Guide -->
-                    <div id="card-guide"
-                        class="hidden border-4 border-dashed border-white/80 rounded-xl w-64 h-40 flex items-center justify-center relative shadow-lg backdrop-blur-sm">
-                        <p class="text-white font-bold bg-black/40 px-4 py-2 rounded-lg backdrop-blur-md">Place Card
-                            Here</p>
-                    </div>
-
                     <!-- Pose Guide -->
                     <div id="pose-guide" class="hidden absolute inset-0 flex items-center justify-center">
                         <div
@@ -244,30 +375,31 @@
                         <div
                             class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             1</div>
-                        <p class="text-sm text-gray-500"><b>Hold Card:</b> Hold a debit/credit card horizontally in your
-                            hand.</p>
+                        <p class="text-sm text-gray-500"><b>Position:</b> Stand <b>2 meters</b> (~6.5 feet) from the
+                            camera.</p>
                     </div>
                     <div class="flex gap-4 items-start">
                         <div
                             class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             2</div>
-                        <p class="text-sm text-gray-500"><b>Pose:</b> Show upper body (head to hips), arms relaxed.</p>
+                        <p class="text-sm text-gray-500"><b>Pose:</b> Show upper body (head to hips), arms relaxed at
+                            sides.</p>
                     </div>
                     <div class="flex gap-4 items-start">
                         <div
                             class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
                             3</div>
-                        <p class="text-sm text-gray-500"><b>Wait:</b> Auto-captures when calibrated and 30 samples
-                            collected.</p>
+                        <p class="text-sm text-gray-500"><b>Wait:</b> Hold still while 30 samples are captured
+                            automatically.</p>
                     </div>
                 </div>
 
-                <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <p class="text-sm text-amber-800 font-medium">💳 Card is detected automatically for calibration.</p>
+                <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-sm text-blue-800 font-medium">📍 Accurate distance = accurate measurements!</p>
                 </div>
 
-                <div class="mt-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <p class="text-sm text-blue-800 font-medium">💡 Enter employee name BEFORE measuring.</p>
+                <div class="mt-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                    <p class="text-sm text-amber-800 font-medium">💡 Enter employee name BEFORE measuring.</p>
                 </div>
             </div>
 
@@ -337,19 +469,16 @@
     <script>
         // --- APP STATE & CONFIG ---
         const CONFIG = {
-            cardWidthMm: 85.6,
-            cardHeightMm: 53.98,
-            cardAspectRatio: 85.6 / 53.98, // ~1.585
-            aspectRatioTolerance: 0.3, // Increased for real-world card angles
-            minCardArea: 1500, // Reduced to detect card from further away
-            confidenceThreshold: 0.6, // Lowered for better detection
+            // Fixed distance calibration (2 meters from camera)
+            cameraDistanceMeters: 2.0,
+            cameraFovDegrees: 60, // Standard webcam FOV
+            confidenceThreshold: 0.6,
             smoothingWindow: 10
         };
 
         const STATE = {
             INIT: 'initializing',
             WAITING_PERMISSIONS: 'waiting_permissions',
-            DETECTING_CARD: 'detecting_card',
             DETECTING_POSE: 'detecting_pose',
             CALCULATING: 'calculating',
             SHOW_RESULTS: 'results',
@@ -465,7 +594,6 @@
                     await this.waitForOpenCV();
 
                     // 4. Start Loop - go directly to pose detection
-                    // Card will be detected in hand during pose
                     this.updateStatus(STATE.DETECTING_POSE);
                     document.getElementById('loader').classList.add('hidden');
                     this.loop();
@@ -576,13 +704,11 @@
                 appState = state;
                 const statusText = document.getElementById('status-text');
                 const indicator = document.getElementById('status-indicator');
-                const cardGuide = document.getElementById('card-guide');
                 const poseGuide = document.getElementById('pose-guide');
                 const captureBtn = document.getElementById('capture-container');
                 const poseGuidance = document.getElementById('pose-guidance');
 
                 // Reset guides
-                cardGuide.classList.add('hidden');
                 poseGuide.classList.add('hidden');
                 if (captureBtn) captureBtn.classList.add('hidden');
                 if (poseGuidance) poseGuidance.classList.add('hidden');
@@ -592,13 +718,8 @@
                         statusText.innerText = "Initializing System...";
                         indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide border border-blue-100";
                         break;
-                    case STATE.DETECTING_CARD:
-                        statusText.innerText = "Hold Credit Card on Chest";
-                        indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide border border-blue-100";
-                        cardGuide.classList.remove('hidden');
-                        break;
                     case STATE.DETECTING_POSE:
-                        statusText.innerText = "Stand Back & Pose";
+                        statusText.innerText = "Stand 2m Away & Pose";
                         indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold uppercase tracking-wide border border-purple-100";
                         poseGuide.classList.remove('hidden');
                         if (captureBtn) captureBtn.classList.remove('hidden');
@@ -632,117 +753,39 @@
                 this.updateStatus(STATE.DETECTING_POSE);
             }
 
-            // setCalibrationMethod removed - card calibration is automatic
+            // Dismiss instruction modal
+            dismissInstructions() {
+                document.getElementById('instruction-modal').classList.add('hidden');
+            }
+
+            // Calculate scale based on fixed distance (2 meters)
+            calculateFixedScale() {
+                // Formula: At distance D with FOV θ, frame width = 2 * D * tan(θ/2)
+                // For 60° FOV at 2m: Frame width ≈ 2 * 2 * tan(30°) ≈ 2.31 meters (231 cm)
+                const fovRadians = (CONFIG.cameraFovDegrees * Math.PI) / 180;
+                const frameWidthCm = 2 * CONFIG.cameraDistanceMeters * 100 * Math.tan(fovRadians / 2);
+                scalePxPerCm = canvas.width / frameWidthCm;
+                console.log(`Fixed scale calculated: ${scalePxPerCm.toFixed(2)} px/cm at ${CONFIG.cameraDistanceMeters}m`);
+            }
+
+            // setCalibrationMethod removed - using fixed distance calibration
 
             async loop() {
                 if (appState === STATE.ERROR) return;
 
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                // Unified detection: always run pose, detect card in hand if no scale yet
+                // Calculate fixed scale on first loop if not set
+                if (scalePxPerCm === 0) {
+                    this.calculateFixedScale();
+                }
+
+                // Process pose detection
                 if (appState === STATE.DETECTING_POSE) {
-                    // Try to detect card for calibration if we don't have scale
-                    if (scalePxPerCm === 0 && opencvLoaded) {
-                        try {
-                            this.processCardDetection();
-                        } catch (e) {
-                            console.error("CV Error:", e);
-                        }
-                    }
-                    // Always process pose
                     await this.processPoseDetection();
                 }
 
                 requestAnimationFrame(() => this.loop());
-            }
-
-            processCardDetection() {
-                // Initialize VideoCapture only once if possible, but for simplicity/robustness in this single-file setup:
-                // We must ensure video dimensions match what OpenCV expects.
-                if (video.videoWidth === 0 || video.videoHeight === 0) return;
-
-                // OpenCV Card Detection Logic - IMPROVED
-                let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-                let cap = new cv.VideoCapture(video);
-                cap.read(src);
-
-                // 2. IMPROVED Preprocessing with Adaptive Thresholding
-                let gray = new cv.Mat();
-                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-                // Use bilateral filter to reduce noise while preserving edges
-                let blur = new cv.Mat();
-                cv.bilateralFilter(gray, blur, 9, 75, 75);
-
-                // Adaptive thresholding for better edge detection in various lighting
-                let thresh = new cv.Mat();
-                cv.adaptiveThreshold(blur, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
-
-                // Apply Canny on thresholded image
-                let edges = new cv.Mat();
-                cv.Canny(thresh, edges, 30, 100);
-
-                // Dilate to connect broken edges
-                let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-                let dilated = new cv.Mat();
-                cv.dilate(edges, dilated, kernel);
-
-                // 3. Find Contours on DILATED edges
-                let contours = new cv.MatVector();
-                let hierarchy = new cv.Mat();
-                cv.findContours(dilated, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-                let bestRect = null;
-                let maxArea = 0;
-
-                for (let i = 0; i < contours.size(); ++i) {
-                    let cnt = contours.get(i);
-                    let area = cv.contourArea(cnt);
-
-                    if (area > CONFIG.minCardArea) {
-                        let peri = cv.arcLength(cnt, true);
-                        let approx = new cv.Mat();
-                        cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
-
-                        if (approx.rows === 4) {
-                            let rect = cv.boundingRect(approx);
-                            let aspectRatio = rect.width / rect.height;
-
-                            // Target ratio for LANDSCAPE card: 85.6 / 53.98 = ~1.58
-                            let targetRatio = 85.6 / 53.98;
-                            if (Math.abs(aspectRatio - targetRatio) < CONFIG.aspectRatioTolerance) {
-                                if (area > maxArea) {
-                                    maxArea = area;
-                                    bestRect = rect;
-                                }
-                            }
-                        }
-                        approx.delete();
-                    }
-                }
-
-                if (bestRect) {
-                    // Draw bounding box
-                    ctx.strokeStyle = '#00ff00';
-                    ctx.lineWidth = 4;
-                    ctx.strokeRect(bestRect.x, bestRect.y, bestRect.width, bestRect.height);
-
-                    // Calculate Scale: Card in LANDSCAPE mode - width is 85.6mm
-                    let cardWidthCm = 8.56;
-                    scalePxPerCm = bestRect.width / cardWidthCm; // pixels per cm
-
-                    // Visual feedback
-                    ctx.fillStyle = '#00ff00';
-                    ctx.font = '20px Arial';
-                    ctx.fillText(`✓ Card Calibrated! Scale: ${scalePxPerCm.toFixed(2)} px/cm`, bestRect.x, bestRect.y - 10);
-
-                    // No state transition needed - we're already in pose mode
-                }
-
-                // Cleanup - delete all OpenCV matrices
-                src.delete(); gray.delete(); blur.delete(); thresh.delete();
-                edges.delete(); kernel.delete(); dilated.delete();
-                contours.delete(); hierarchy.delete();
             }
 
             async processPoseDetection() {
@@ -758,8 +801,6 @@
                     const pose = poses[0];
                     this.drawSkeleton(pose.keypoints);
 
-                    // Card calibration is handled separately - no height method needed
-
                     // Check shoulder keypoints
                     const leftShoulder = pose.keypoints[11];
                     const rightShoulder = pose.keypoints[12];
@@ -769,11 +810,8 @@
                     if (leftShoulder.score < 0.5 || rightShoulder.score < 0.5) {
                         if (guidanceText) guidanceText.innerText = "👤 Shoulders Not Visible";
                         if (guidanceHint) guidanceHint.innerText = "Step back until shoulders are in frame";
-                    } else if (scalePxPerCm === 0) {
-                        if (guidanceText) guidanceText.innerText = "💳 Show Credit Card";
-                        if (guidanceHint) guidanceHint.innerText = "Hold card horizontally (landscape) facing camera";
                     } else {
-                        // Check if person is too close or too far
+                        // Check if person is too close or too far based on shoulder ratio
                         const shoulderWidthPx = Math.sqrt(
                             Math.pow(leftShoulder.x - rightShoulder.x, 2) +
                             Math.pow(leftShoulder.y - rightShoulder.y, 2)
@@ -781,12 +819,12 @@
                         const frameWidth = canvas.width;
                         const shoulderRatio = shoulderWidthPx / frameWidth;
 
-                        if (shoulderRatio > 0.6) {
+                        if (shoulderRatio > 0.5) {
                             if (guidanceText) guidanceText.innerText = "⬅️ Step Back";
-                            if (guidanceHint) guidanceHint.innerText = "You're too close to the camera";
-                        } else if (shoulderRatio < 0.15) {
+                            if (guidanceHint) guidanceHint.innerText = "You're too close - move to 2m distance";
+                        } else if (shoulderRatio < 0.12) {
                             if (guidanceText) guidanceText.innerText = "➡️ Step Closer";
-                            if (guidanceHint) guidanceHint.innerText = "You're too far from the camera";
+                            if (guidanceHint) guidanceHint.innerText = "You're too far - move to 2m distance";
                         } else {
                             // Good position - measuring
                             if (guidanceText) guidanceText.innerText = "✅ Perfect! Hold Still...";
