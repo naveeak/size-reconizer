@@ -393,9 +393,17 @@
             </div>
         </div>
 
+        <!-- Mobile Sidebar Toggle -->
+        <button onclick="app.toggleSidebar()"
+            class="md:hidden fixed bottom-6 right-6 z-40 bg-white text-gray-900 p-4 rounded-full shadow-xl border border-gray-200 flex items-center justify-center transition-transform active:scale-95">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+        </button>
+
         <!-- Sidebar / Results Panel -->
-        <div
-            class="md:w-96 bg-white border-l border-gray-200 flex flex-col z-20 shadow-xl transition-transform duration-300 transform translate-y-full md:translate-y-0 absolute md:relative bottom-0 w-full h-2/3 md:h-full">
+        <div id="main-sidebar"
+            class="md:w-96 bg-white border-l border-gray-200 flex flex-col z-30 shadow-xl transition-transform duration-300 transform translate-y-full md:translate-y-0 absolute md:relative bottom-0 w-full h-[85vh] md:h-full rounded-t-3xl md:rounded-none">
 
             <!-- Instructions Panel -->
             <div id="instructions-panel" class="p-8 flex-1 overflow-y-auto">
@@ -1115,6 +1123,9 @@
                 document.getElementById('instructions-panel').classList.add('hidden');
                 document.getElementById('results-panel').classList.remove('hidden');
 
+                // On mobile, ensure sidebar is open
+                this.toggleSidebar(true);
+
                 this.updateStatus(STATE.SHOW_RESULTS);
                 appState = STATE.SHOW_RESULTS; // Stop loop processing
 
@@ -1200,6 +1211,17 @@
 
                     // Trigger size update
                     this.recalculateSize();
+                }
+            }
+
+            toggleSidebar(forceOpen = null) {
+                const el = document.getElementById('main-sidebar');
+                if (forceOpen === true) {
+                    el.classList.remove('translate-y-full');
+                } else if (forceOpen === false) {
+                    el.classList.add('translate-y-full');
+                } else {
+                    el.classList.toggle('translate-y-full');
                 }
             }
 
