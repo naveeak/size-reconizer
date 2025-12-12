@@ -186,7 +186,8 @@
             </div>
 
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                <p class="text-blue-800 font-bold text-center text-lg">📍 Stand 2 meters (~6.5 feet) from camera</p>
+                <p class="text-blue-800 font-bold text-center text-lg">📍 Ensure your EYES are visible for calibration
+                </p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -223,7 +224,7 @@
                     <div class="space-y-2 text-sm text-gray-600">
                         <div class="do-item">
                             <span class="do-icon red">✗</span>
-                            <span>Stand too close or far</span>
+                            <span>Cover your face</span>
                         </div>
                         <div class="do-item">
                             <span class="do-icon red">✗</span>
@@ -360,7 +361,7 @@
                         <!-- Distance indicator -->
                         <div id="distance-indicator"
                             class="absolute bottom-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 bg-yellow-500/80 text-black">
-                            📏 Stand at 2 meters
+                            📏 Face Camera & Show Upper Body
                         </div>
                     </div>
                 </div>
@@ -409,96 +410,98 @@
 
                 <div class="space-y-4">
                     <div class="flex gap-4 items-start">
-                        <div
-                            class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
-                            1</div>
-                        <p class="text-sm text-gray-500"><b>Position:</b> Stand <b>2 meters</b> (~6.5 feet) from the
-                            camera.</p>
-                    </div>
-                    <div class="flex gap-4 items-start">
-                        <div
-                            class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
-                            2</div>
-                        <p class="text-sm text-gray-500"><b>Pose:</b> Show upper body (head to hips), arms relaxed at
-                            sides.</p>
-                    </div>
-                    <div class="flex gap-4 items-start">
-                        <div
-                            class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
-                            3</div>
-                        <p class="text-sm text-gray-500"><b>Wait:</b> Hold still while 30 samples are captured
-                            automatically.</p>
-                    </div>
+                        class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center
+                        font-bold shrink-0 text-sm">
+                        1</div>
+                    <p class="text-sm text-gray-500"><b>Position:</b> Stand where your <b>upper body & face</b> are
+                        clearly visible.</p>
                 </div>
-
-                <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <p class="text-sm text-blue-800 font-medium">📍 Accurate distance = accurate measurements!</p>
+                <div class="flex gap-4 items-start">
+                    <div
+                        class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
+                        2</div>
+                    <p class="text-sm text-gray-500"><b>Pose:</b> Show upper body (head to hips), arms relaxed at
+                        sides.</p>
                 </div>
-
-                <div class="mt-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <p class="text-sm text-amber-800 font-medium">💡 Enter employee name BEFORE measuring.</p>
+                <div class="flex gap-4 items-start">
+                    <div
+                        class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold shrink-0 text-sm">
+                        3</div>
+                    <p class="text-sm text-gray-500"><b>Wait:</b> Hold still while 30 samples are captured
+                        automatically.</p>
                 </div>
             </div>
 
-            <!-- Results Panel (Hidden initially) -->
-            <div id="results-panel" class="hidden absolute inset-0 bg-white p-8 flex flex-col overflow-y-auto">
-                <div class="text-center mb-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Analysis Complete</h2>
-                    <p class="text-gray-500 text-sm">Review your measurements. Edit if needed.</p>
-                </div>
+        </div>
 
-                <div class="flex-1 flex flex-col items-center justify-center">
-                    <!-- 3D Model Container -->
-                    <div id="three-container"
-                        class="w-full h-40 bg-gray-50 rounded-xl mb-4 overflow-hidden border border-gray-100 relative">
-                        <!-- Canvas will be injected here -->
-                    </div>
+        <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p class="text-sm text-blue-800 font-medium">📍 Face the camera directly for auto-calibration!</p>
+        </div>
 
-                    <div class="relative mb-4">
-                        <div class="absolute inset-0 bg-gray-900 rounded-full opacity-5 blur-xl"></div>
-                        <div
-                            class="relative w-20 h-20 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
-                            <span id="result-size" class="text-3xl font-bold text-white">L</span>
-                        </div>
-                    </div>
+        <div class="mt-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+            <p class="text-sm text-amber-800 font-medium">💡 Enter employee name BEFORE measuring.</p>
+        </div>
+        </div>
 
-                    <!-- Editable Measurements -->
-                    <div class="w-full space-y-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-500 text-sm font-medium">Chest (cm)</span>
-                            <div class="flex items-center gap-2">
-                                <input type="number" id="input-chest"
-                                    class="w-20 text-right font-mono font-bold text-gray-900 text-lg bg-white border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                <button onclick="app.recalculateSize()"
-                                    class="text-blue-600 hover:text-blue-800 text-xs font-medium">Update</button>
-                            </div>
-                        </div>
-                        <div class="w-full h-px bg-gray-200"></div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-500 text-sm font-medium">Shoulder (cm)</span>
-                            <div class="flex items-center gap-2">
-                                <input type="number" id="input-shoulder"
-                                    class="w-20 text-right font-mono font-bold text-gray-900 text-lg bg-white border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Edit Notice -->
-                    <p id="edit-notice" class="hidden mt-3 text-xs text-amber-600 font-medium">⚠️ Measurements were
-                        manually edited</p>
-                </div>
-
-                <div class="mt-6 space-y-3">
-                    <button onclick="app.saveCurrentResult()"
-                        class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold tracking-wide transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                        SAVE RESULT
-                    </button>
-                    <button onclick="app.reset()"
-                        class="w-full py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 rounded-xl font-bold tracking-wide transition-colors">
-                        MEASURE AGAIN
-                    </button>
-                </div>
+        <!-- Results Panel (Hidden initially) -->
+        <div id="results-panel" class="hidden absolute inset-0 bg-white p-8 flex flex-col overflow-y-auto">
+            <div class="text-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">Analysis Complete</h2>
+                <p class="text-gray-500 text-sm">Review your measurements. Edit if needed.</p>
             </div>
+
+            <div class="flex-1 flex flex-col items-center justify-center">
+                <!-- 3D Model Container -->
+                <div id="three-container"
+                    class="w-full h-40 bg-gray-50 rounded-xl mb-4 overflow-hidden border border-gray-100 relative">
+                    <!-- Canvas will be injected here -->
+                </div>
+
+                <div class="relative mb-4">
+                    <div class="absolute inset-0 bg-gray-900 rounded-full opacity-5 blur-xl"></div>
+                    <div
+                        class="relative w-20 h-20 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
+                        <span id="result-size" class="text-3xl font-bold text-white">L</span>
+                    </div>
+                </div>
+
+                <!-- Editable Measurements -->
+                <div class="w-full space-y-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500 text-sm font-medium">Chest (cm)</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="input-chest"
+                                class="w-20 text-right font-mono font-bold text-gray-900 text-lg bg-white border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <button onclick="app.recalculateSize()"
+                                class="text-blue-600 hover:text-blue-800 text-xs font-medium">Update</button>
+                        </div>
+                    </div>
+                    <div class="w-full h-px bg-gray-200"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500 text-sm font-medium">Shoulder (cm)</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="input-shoulder"
+                                class="w-20 text-right font-mono font-bold text-gray-900 text-lg bg-white border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Notice -->
+                <p id="edit-notice" class="hidden mt-3 text-xs text-amber-600 font-medium">⚠️ Measurements were
+                    manually edited</p>
+            </div>
+
+            <div class="mt-6 space-y-3">
+                <button onclick="app.saveCurrentResult()"
+                    class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold tracking-wide transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    SAVE RESULT
+                </button>
+                <button onclick="app.reset()"
+                    class="w-full py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 rounded-xl font-bold tracking-wide transition-colors">
+                    MEASURE AGAIN
+                </button>
+            </div>
+        </div>
 
         </div>
     </main>
@@ -756,7 +759,7 @@
                         indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wide border border-blue-100";
                         break;
                     case STATE.DETECTING_POSE:
-                        statusText.innerText = "Stand 2m Away & Pose";
+                        statusText.innerText = "Face Camera & Pose";
                         indicator.className = "flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold uppercase tracking-wide border border-purple-100";
                         poseGuide.classList.remove('hidden');
                         if (captureBtn) captureBtn.classList.remove('hidden');
@@ -888,12 +891,12 @@
 
                         if (shoulderRatio > 0.5) {
                             if (guidanceText) guidanceText.innerText = "⬅️ Step Back";
-                            if (guidanceHint) guidanceHint.innerText = "You're too close - move to 2m distance";
+                            if (guidanceHint) guidanceHint.innerText = "You're too close";
                             // Red outline - too close
                             this.updateBodyOutlineColor('rgba(255,100,100,0.7)', 'bg-red-500/80 text-white', '⬅️ TOO CLOSE - Step Back');
                         } else if (shoulderRatio < 0.12) {
                             if (guidanceText) guidanceText.innerText = "➡️ Step Closer";
-                            if (guidanceHint) guidanceHint.innerText = "You're too far - move to 2m distance";
+                            if (guidanceHint) guidanceHint.innerText = "You're too far";
                             // Orange outline - too far
                             this.updateBodyOutlineColor('rgba(255,180,50,0.7)', 'bg-orange-500/80 text-white', '➡️ TOO FAR - Step Closer');
                         } else {
@@ -908,15 +911,42 @@
                     // Measure if conditions are met
                     // CHECK ROTATION: Ensure shoulders are roughly parallel to camera (z-depth difference low)
                     const zDiff = Math.abs(leftShoulder.z - rightShoulder.z);
-                    const isRotated = zDiff > 0.4; // Relaxed threshold further (was 0.2) to prevent blocking
+                    const isRotated = zDiff > 0.4;
+
+                    // --- DYNAMIC CALIBRATION VIA EYES (IPD) ---
+                    // This fixes the "Camera FOV / Distance" issue.
+                    // We use standard Inter-pupillary distance (6.4cm) to calibrate scale.
+                    const leftEye = pose.keypoints[5]; // Index 5 is Left Eye in BlazePose
+                    const rightEye = pose.keypoints[2]; // Index 2 is Right Eye
+
+                    let currentScale = scalePxPerCm;
+
+                    if (leftEye.score > 0.8 && rightEye.score > 0.8) {
+                        const eyeDx = leftEye.x - rightEye.x;
+                        const eyeDy = leftEye.y - rightEye.y;
+                        const eyeDistPx = Math.sqrt(eyeDx * eyeDx + eyeDy * eyeDy);
+                        // Standard IPD = 6.4 cm
+                        const calculatedScale = eyeDistPx / 6.4;
+
+                        // Smooth the scale (simple moving average logic or just use current if stable)
+                        // For responsiveness, we'll use a blend
+                        if (scalePxPerCm === 0) {
+                            scalePxPerCm = calculatedScale;
+                        } else {
+                            scalePxPerCm = (scalePxPerCm * 0.9) + (calculatedScale * 0.1);
+                        }
+                        currentScale = scalePxPerCm;
+
+                        // Debug visual for eyes (optional, maybe too cluttered)
+                    }
 
                     // ALWAYS DRAW VISUAL FEEDBACK regardless of capture status
                     // This ensures user knows they are detected
-                    if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold && scalePxPerCm > 0) {
+                    if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold && currentScale > 0) {
                         const dx = leftShoulder.x - rightShoulder.x;
                         const dy = leftShoulder.y - rightShoulder.y;
                         const distPx = Math.sqrt(dx * dx + dy * dy);
-                        const shoulderCm = distPx / scalePxPerCm;
+                        const shoulderCm = distPx / currentScale;
 
                         // Draw Shoulder Line
                         ctx.beginPath();
@@ -1159,43 +1189,58 @@
             }
 
             async toggleDashboard() {
-                const dashboard = document.getElementById('dashboard-view');
-                const isHidden = dashboard.classList.contains('hidden');
+                try {
+                    const dashboard = document.getElementById('dashboard-view');
+                    const isHidden = dashboard.classList.contains('hidden');
 
-                if (isHidden) {
-                    // Show
-                    dashboard.classList.remove('hidden');
-                    await this.loadDashboardData();
-                } else {
-                    // Hide
-                    dashboard.classList.add('hidden');
+                    if (isHidden) {
+                        // Show
+                        dashboard.classList.remove('hidden');
+                        await this.loadDashboardData();
+                    } else {
+                        // Hide
+                        dashboard.classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error("Dashboard error:", error);
+                    alert("Error opening dashboard: " + error.message);
                 }
             }
 
             async loadDashboardData() {
-                const data = await db.getAll();
-                const tbody = document.getElementById('history-table-body');
-                tbody.innerHTML = '';
+                try {
+                    const data = await db.getAll();
+                    const tbody = document.getElementById('history-table-body');
+                    tbody.innerHTML = '';
 
-                data.reverse().forEach(item => {
-                    const row = document.createElement('tr');
-                    row.className = 'border-b border-gray-100 hover:bg-gray-50 transition-colors';
-                    const editedBadge = item.edited
-                        ? '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Edited</span>'
-                        : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">AI</span>';
-                    row.innerHTML = `
-                        <td class="p-4 font-bold text-gray-900">${item.name || 'Unknown'}</td>
-                        <td class="p-4"><span class="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold">${item.size}</span></td>
-                        <td class="p-4 text-gray-600">${item.chest} cm</td>
-                        <td class="p-4 text-gray-600">${item.shoulder} cm</td>
-                        <td class="p-4">${editedBadge}</td>
-                        <td class="p-4 text-gray-500 text-sm">${item.date}</td>
-                        <td class="p-4">
-                            <img src="${item.image}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-110 transition-transform" onclick="app.downloadImage('${item.image}')">
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">No measurements yet.</td></tr>';
+                        return;
+                    }
+
+                    data.reverse().forEach(item => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-gray-100 hover:bg-gray-50 transition-colors';
+                        const editedBadge = item.edited
+                            ? '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Edited</span>'
+                            : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">AI</span>';
+                        row.innerHTML = `
+                            <td class="p-4 font-bold text-gray-900">${item.name || 'Unknown'}</td>
+                            <td class="p-4"><span class="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold">${item.size}</span></td>
+                            <td class="p-4 text-gray-600">${item.chest} cm</td>
+                            <td class="p-4 text-gray-600">${item.shoulder} cm</td>
+                            <td class="p-4">${editedBadge}</td>
+                            <td class="p-4 text-gray-500 text-sm">${item.date}</td>
+                            <td class="p-4">
+                                <img src="${item.image}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-110 transition-transform" onclick="app.downloadImage('${item.image}')">
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error("Failed to load dashboard data:", error);
+                    document.getElementById('history-table-body').innerHTML = '<tr><td colspan="7" class="p-4 text-red-500 text-center">Failed to load data.</td></tr>';
+                }
             }
 
             downloadImage(dataUrl) {
