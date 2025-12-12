@@ -875,7 +875,10 @@
                     const bodyOutline = document.getElementById('body-outline');
                     const distanceIndicator = document.getElementById('distance-indicator');
 
-                    if (leftShoulder.score < 0.5 || rightShoulder.score < 0.5) {
+                    // Helper to check if point is on screen
+                    const onScreen = (pt) => pt.x > 0 && pt.x < canvas.width && pt.y > 0 && pt.y < canvas.height;
+
+                    if (leftShoulder.score < 0.5 || rightShoulder.score < 0.5 || !onScreen(leftShoulder) || !onScreen(rightShoulder)) {
                         if (guidanceText) guidanceText.innerText = "👤 Shoulders Not Visible";
                         if (guidanceHint) guidanceHint.innerText = "Step back until shoulders are in frame";
                         // Red outline - not visible
@@ -940,9 +943,14 @@
                         // Debug visual for eyes (optional, maybe too cluttered)
                     }
 
+                    // Use stricter check for actual measurement Capture
+                    const goodShoulders = leftShoulder.score > CONFIG.confidenceThreshold &&
+                        rightShoulder.score > CONFIG.confidenceThreshold &&
+                        onScreen(leftShoulder) && onScreen(rightShoulder);
+
                     // ALWAYS DRAW VISUAL FEEDBACK regardless of capture status
                     // This ensures user knows they are detected
-                    if (leftShoulder.score > CONFIG.confidenceThreshold && rightShoulder.score > CONFIG.confidenceThreshold && currentScale > 0) {
+                    if (goodShoulders && currentScale > 0) {
                         const dx = leftShoulder.x - rightShoulder.x;
                         const dy = leftShoulder.y - rightShoulder.y;
                         const distPx = Math.sqrt(dx * dx + dy * dy);
