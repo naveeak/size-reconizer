@@ -461,7 +461,16 @@
                         <div class="absolute inset-0 bg-gray-900 rounded-full opacity-5 blur-xl"></div>
                         <div
                             class="relative w-20 h-20 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
-                            <span id="result-size" class="text-3xl font-bold text-white">L</span>
+                            <select id="result-size-select" onchange="app.manualSizeUpdate()"
+                                class="appearance-none bg-transparent text-white font-bold text-3xl text-center focus:outline-none cursor-pointer border-none p-0 w-full h-full flex items-center justify-center">
+                                <option value="XS" class="text-black">XS</option>
+                                <option value="S" class="text-black">S</option>
+                                <option value="M" class="text-black">M</option>
+                                <option value="L" class="text-black">L</option>
+                                <option value="XL" class="text-black">XL</option>
+                                <option value="XXL" class="text-black">XXL</option>
+                                <option value="3XL" class="text-black">3XL</option>
+                            </select>
                         </div>
                     </div>
 
@@ -475,6 +484,19 @@
                                 <button onclick="app.recalculateSize()"
                                     class="text-blue-600 hover:text-blue-800 text-xs font-medium">Update</button>
                             </div>
+                        </div>
+
+                        <!-- Calibration Slider -->
+                        <div class="mt-4 w-full bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <div class="flex justify-between text-xs text-gray-500 mb-2">
+                                <span>Scale Adjustment</span>
+                                <span id="calib-value">1.0x</span>
+                            </div>
+                            <input type="range" id="input-calibration" min="0.8" max="1.5" step="0.05" value="1.0"
+                                oninput="app.updateCalibration(this.value)"
+                                class="w-full accent-gray-900 cursor-pointer">
+                            <p class="text-[10px] text-gray-400 mt-1 text-center">Slide if measurement looks
+                                consistently off</p>
                         </div>
                         <div class="w-full h-px bg-gray-200"></div>
                         <div class="flex justify-between items-center">
@@ -928,8 +950,8 @@
                         const eyeDx = leftEye.x - rightEye.x;
                         const eyeDy = leftEye.y - rightEye.y;
                         const eyeDistPx = Math.sqrt(eyeDx * eyeDx + eyeDy * eyeDy);
-                        // Standard IPD = 6.4 cm
-                        const calculatedScale = eyeDistPx / 6.4;
+                        // Updated IPD = 7.5 cm (To account for perspective distortion)
+                        const calculatedScale = eyeDistPx / 7.5;
 
                         // Smooth the scale (simple moving average logic or just use current if stable)
                         // For responsiveness, we'll use a blend
@@ -1079,7 +1101,8 @@
                 const size = this.getSize(chestCm);
 
                 // Show Results - populate editable inputs
-                document.getElementById('result-size').innerText = size;
+                const sizeSelect = document.getElementById('result-size-select');
+                if (sizeSelect) sizeSelect.value = size;
                 document.getElementById('input-chest').value = chestCm.toFixed(1);
                 document.getElementById('input-shoulder').value = avgShoulderCm.toFixed(1);
 
@@ -1145,7 +1168,8 @@
 
                 // Recalculate size based on (potentially) edited chest
                 const newSize = this.getSize(newChestCm);
-                document.getElementById('result-size').innerText = newSize;
+                const sizeSelect = document.getElementById('result-size-select');
+                if (sizeSelect) sizeSelect.value = newSize;
 
                 // Update 3D model
                 if (torsoMesh) {
@@ -1159,6 +1183,19 @@
                     currentResult.shoulder = newShoulderCm.toFixed(1);
                     currentResult.size = newSize;
                     currentResult.edited = wasEdited;
+                }
+            }
+
+            manualSizeUpdate() {
+                const sizeSelect = document.getElementById('result-size-select');
+                const newSize = sizeSelect.value;
+
+                wasEdited = true;
+                document.getElementById('edit-notice').classList.remove('hidden');
+
+                if (currentResult) {
+                    currentResult.size = newSize;
+                    currentResult.edited = true;
                 }
             }
 
